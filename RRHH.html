@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de RRHH</title> 
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+      body {
+          font-family: 'Inter', sans-serif;
+          background-color: #f3f4f6; /* bg-gray-100 */
+      }
+      .badge {
+        padding: 0.125rem 0.5rem; /* px-2 py-0.5 */
+        font-size: 0.75rem; /* text-xs */
+        font-weight: 500; /* font-medium */
+        border-radius: 9999px; /* rounded-full */
+      }
+      .badge-activo {
+        background-color: #dcfce7; /* bg-green-100 */
+        color: #166534; /* text-green-800 */
+      }
+      .badge-inactivo {
+        background-color: #fee2e2; /* bg-red-100 */
+        color: #991b1b; /* text-red-800 */
+      }
+      .badge-vacaciones {
+        background-color: #fef3c7; /* bg-yellow-100 */
+        color: #92400e; /* text-yellow-800 */
+      }
+      .badge-licencia {
+        background-color: #e0e7ff; /* bg-indigo-100 */
+        color: #3730a3; /* text-indigo-800 */
+      }
+      .badge-default {
+        background-color: #f3f4f6; /* bg-gray-100 */
+        color: #374151; /* text-gray-800 */
+      }
+      
+      /* Estilo para filas de tabla clickables */
+      #rrhh-tbody tr {
+        cursor: pointer;
+      }
+      
+      /* Ocultar el input de archivo por defecto (lo estilizamos con el label) */
+      input[type="file"].hidden-file-input {
+        width: 0.1px;
+        height: 0.1px;
+        opacity: 0;
+        overflow: hidden;
+        position: absolute;
+        z-index: -1;
+      }
+      
+    </style>
+</head>
+
+<body class="h-full bg-gray-100">
+
+    <!-- HEADER DE PÁGINA -->
+    <header class="w-full bg-blue-600">
+        <div class="w-full max-w-7xl mx-auto flex justify-between items-center pt-8 pb-10 px-4 sm:px-6 lg:px-8">
+            <!-- LOGO ACTUALIZADO: URL Puesta directamente -->
+            <img src="https://i.postimg.cc/BQ2Sp0T4/Logotransparente.png" alt="Logo" 
+                 class="h-10 w-auto cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-95 hover:drop-shadow-lg" 
+                 onclick="handleNavigation('INDEX')">
+            
+            <h1 id="header-title" class="text-3xl font-bold text-white hidden md:block">Gestión de Recursos Humanos</h1>
+            
+            <button
+              id="btn-back-to-search" 
+              onclick="handleNavigation('INDEX')"
+              type="button"
+              class="bg-white text-center w-48 rounded-2xl h-14 relative text-blue-700 text-xl font-semibold border-4 border-white group"
+            >
+              <div
+                class="bg-blue-600 rounded-xl h-12 w-1/4 grid place-items-center absolute left-0 top-0 group-hover:w-full z-10 duration-500"
+              >
+                <svg class="w-6 h-6" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                  <path fill="#FFFFFF" d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z"></path>
+                  <path fill="#FFFFFF" d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z"></path>
+                </svg>
+              </div>
+              <p class="translate-x-4 transition-transform duration-500 group-hover:translate-x-0">Volver</p> 
+            </button>
+        </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL: RRHH -->
+    <main class="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:px-8">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Columna Izquierda: Búsqueda y Formulario -->
+            <div class="lg:col-span-1 space-y-6">
+                
+                <!-- NUEVO: Barra de Búsqueda -->
+                <div class="bg-white rounded-lg shadow-xl p-4 sticky top-6">
+                    <label for="search-input" class="block text-sm font-medium text-gray-700">Buscar Colaborador</label>
+                    <input type="text" id="search-input" placeholder="Buscar por nombre, documento, email..."
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                </div>
+
+                <!-- Formulario de Creación / Edición -->
+                <div class="bg-white rounded-lg shadow-xl p-6">
+                    <h2 id="form-title" class="text-2xl font-bold text-gray-900">Crear Colaborador</h2>
+                    <p id="form-subtitle" class="mt-1 text-sm text-gray-600">Añada un nuevo colaborador al maestro.</p>
+                    
+                    <form id="rrhh-form" class="mt-6 space-y-4">
+                        
+                        <!-- ID Oculto para lógica de Actualización -->
+                        <input type="hidden" id="colaborador-id-hidden">
+                        
+                        <h3 class="text-lg font-medium text-gray-800 border-b pb-2">Datos Personales</h3>
+
+                        <div>
+                            <label for="nombre-completo" class="block text-sm font-medium text-gray-700">Nombre Completo</label>
+                            <input type="text" id="nombre-completo" required
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+
+                        <div>
+                            <label for="documento" class="block text-sm font-medium text-gray-700">Documento (CI)</label>
+                            <input type="text" id="documento" required
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+                        
+                        <!-- NUEVO: Email -->
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                            <input type="email" id="email"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+                        
+                        <!-- NUEVO: Celular -->
+                        <div>
+                            <label for="celular" class="block text-sm font-medium text-gray-700">Celular</label>
+                            <input type="tel" id="celular"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+                        
+                        <h3 class="text-lg font-medium text-gray-800 border-b pb-2 pt-4">Datos Contractuales</h3>
+
+                        <!-- CAMPO ID DE COLABORADOR MODIFICADO -->
+                        <div>
+                            <label for="colaborador-id" class="block text-sm font-medium text-gray-700">Colaborador ID</label>
+                            <input type="text" id="colaborador-id" placeholder="Cargando..." readonly
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm bg-gray-100 cursor-not-allowed">
+                            <p class="mt-1 text-xs text-gray-500">Este ID se genera automáticamente.</p>
+                        </div>
+
+                        <div>
+                            <label for="cargo" class="block text-sm font-medium text-gray-700">Cargo</label>
+                            <input type="text" id="cargo" required
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+
+                        <div>
+                            <label for="sueldo-base" class="block text-sm font-medium text-gray-700">Sueldo Base (COP)</label>
+                            <input type="number" id="sueldo-base" min="0" step="10000" required
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+                        
+                        <div>
+                            <label for="tipo-contrato" class="block text-sm font-medium text-gray-700">Tipo de Contrato</label>
+                            <select id="tipo-contrato" required
+                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <option value="Indefinido">Indefinido</option>
+                                <option value="Obra Labor">Obra Labor</option>
+                                <option value="Término Fijo">Término Fijo</option>
+                                <option value="Prestación de Servicios">Prestación de Servicios</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="estado" class="block text-sm font-medium text-gray-700">Estado</label>
+                            <select id="estado" required
+                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <option value="Activo">Activo</option>
+                                <option value="Inactivo">Inactivo</option>
+                                <option value="Vacaciones">Vacaciones</option>
+                                <option value="Licencia">Licencia</option>
+                            </select>
+                        </div>
+
+                        <h3 class="text-lg font-medium text-gray-800 border-b pb-2 pt-4">Gestión Documental</h3>
+
+                        <!-- CAMPO: Foto -->
+                        <div>
+                            <label for="foto-url-file" class="block text-sm font-medium text-gray-700">Foto</label>
+                            <!-- Campo de URL oculto para que el JS lo lea. ID original 'foto-url' -->
+                            <input type="text" id="foto-url" class="hidden">
+                            
+                            <div class="mt-1 flex gap-2">
+                                <!-- Botón 'Adjuntar' (Subir) -->
+                                <!-- Usamos un label estilizado para activar el input[type=file] oculto -->
+                                <label for="foto-url-file" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer text-center">
+                                    Subir Foto
+                                </label>
+                                <input type="file" id="foto-url-file" accept="image/*" class="hidden-file-input"/>
+                                
+                                <!-- Botón 'Ver' -->
+                                <button type="button" 
+                                        onclick="const url = document.getElementById('foto-url').value; if(url) { window.open(url, '_blank'); } else { showTempAlert(this, 'No hay archivo'); }"
+                                        class="flex-shrink-0 px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                    Ver
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- CAMPO: Hoja de Vida -->
+                        <div>
+                            <label for="hoja-de-vida-url-file" class="block text-sm font-medium text-gray-700">Hoja de Vida</label>
+                            <input type="text" id="hoja-de-vida-url" class="hidden">
+                            <div class="mt-1 flex gap-2">
+                                <label for="hoja-de-vida-url-file" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer text-center">
+                                    Subir HV
+                                </label>
+                                <input type="file" id="hoja-de-vida-url-file" accept=".pdf,.doc,.docx" class="hidden-file-input"/>
+                                <button type="button" 
+                                        onclick="const url = document.getElementById('hoja-de-vida-url').value; if(url) { window.open(url, '_blank'); } else { showTempAlert(this, 'No hay archivo'); }"
+                                        class="flex-shrink-0 px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                    Ver
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- CAMPO: Documento CI -->
+                        <div>
+                            <label for="documento-ci-url-file" class="block text-sm font-medium text-gray-700">Documento CI</label>
+                            <input type="text" id="documento-ci-url" class="hidden">
+                            <div class="mt-1 flex gap-2">
+                                <label for="documento-ci-url-file" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer text-center">
+                                    Subir CI
+                                </label>
+                                <input type="file" id="documento-ci-url-file" accept=".pdf,image/*" class="hidden-file-input"/>
+                                <button type="button" 
+                                        onclick="const url = document.getElementById('documento-ci-url').value; if(url) { window.open(url, '_blank'); } else { showTempAlert(this, 'No hay archivo'); }"
+                                        class="flex-shrink-0 px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                    Ver
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- CAMPO: Contrato Firmado -->
+                        <div>
+                            <label for="contrato-firmado-url-file" class="block text-sm font-medium text-gray-700">Contrato Firmado</label>
+                            <input type="text" id="contrato-firmado-url" class="hidden">
+                            <div class="mt-1 flex gap-2">
+                                <label for="contrato-firmado-url-file" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer text-center">
+                                    Subir Contrato
+                                </label>
+                                <input type="file" id="contrato-firmado-url-file" accept=".pdf" class="hidden-file-input"/>
+                                <button type="button" 
+                                        onclick="const url = document.getElementById('contrato-firmado-url').value; if(url) { window.open(url, '_blank'); } else { showTempAlert(this, 'No hay archivo'); }"
+                                        class="flex-shrink-0 px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                    Ver
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Mensaje de feedback -->
+                        <div id="form-feedback" class="text-sm h-5"></div>
+
+                        <!-- Botones de Envío -->
+                        <div class="pt-2 space-y-3">
+                            <button type="submit" id="form-submit-btn"
+                                    class="w-full justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-300">
+                                Guardar Colaborador
+                            </button>
+                            
+                            <!-- Botones de Modo Edición (Ocultos por default) -->
+                            <button type="button" id="form-edit-btn"
+                                    class="w-full justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors duration-300 hidden">
+                                Habilitar Edición
+                            </button>
+                            <button type="button" id="form-cancel-edit-btn"
+                                    class="w-full justify-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-300 hidden">
+                                Cancelar Edición
+                            </button>
+                            
+                            <!-- Botón de Nuevo Colaborador (Oculto por default) -->
+                             <button type="button" id="form-new-btn"
+                                     class="w-full justify-center py-3 px-4 border-2 border-dashed border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-300 hidden">
+                                 + Crear Nuevo Colaborador
+                             </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Vista Dinámica (Lista o Ficha) -->
+            <div class="lg:col-span-2">
+                
+                <!-- VISTA DE LISTA (Default) -->
+                <div id="rrhh-list-view" class="bg-white rounded-lg shadow-xl overflow-hidden">
+                    <div class="p-6">
+                        <h2 class="text-2xl font-bold text-gray-900">Lista de Colaboradores</h2>
+                        <p class="mt-1 text-sm text-gray-600">Maestro de `NOMINA.csv`. (Haga clic en uno para ver detalles)</p>
+                    </div>
+
+                    <!-- Contenedor de la tabla -->
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Colaborador</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Documento</th>
+                                    <!-- NUEVA COLUMNA -->
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contacto</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cargo</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sueldo Base</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                </tr>
+                            </thead>
+                            <!-- Cuerpo de la tabla (se rellena con JS) -->
+                            <tbody id="rrhh-tbody" class="bg-white divide-y divide-gray-200">
+                                
+                                <!-- Indicador de Carga -->
+                                <tr id="rrhh-loader">
+                                    <!-- COLSPAN ACTUALIZADO A 6 -->
+                                    <td colspan="6" class="px-6 py-12 text-center">
+                                        <div class="flex justify-center items-center gap-2 text-gray-500">
+                                            <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Cargando colaboradores...
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- Estado Vacío -->
+                                <tr id="rrhh-empty" class="hidden">
+                                    <!-- COLSPAN ACTUALIZADO A 6 -->
+                                    <td colspan="6" class="px-6 py-12 text-center">
+                                        <h3 class="text-lg font-medium text-gray-600">No hay colaboradores registrados</h3>
+                                        <p class="text-gray-500">Cree un nuevo colaborador en el formulario.</p>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Las filas de datos se insertarán aquí -->
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                </div> <!-- Fin rrhh-list-view -->
+
+                <!-- VISTA DE FICHA/RESUMEN (Oculta por default) -->
+                <div id="rrhh-summary-view" class="bg-white rounded-lg shadow-xl overflow-hidden hidden">
+                    <div class="p-6">
+                        <h2 class="text-2xl font-bold text-gray-900">Ficha de Colaborador</h2>
+                        <p class="mt-1 text-sm text-gray-600">Resumen del colaborador seleccionado.</p>
+                    </div>
+                    
+                    <div class="p-6 border-t border-gray-200">
+                        <div class="flex flex-col sm:flex-row gap-6">
+                            <!-- Foto -->
+                            <div class="flex-shrink-0">
+                                <img id="summary-img" src="https://placehold.co/128x128/e0e7ff/3730a3?text=Foto" 
+                                     class="h-32 w-32 rounded-lg object-cover shadow-md"
+                                     onerror="this.src='https://placehold.co/128x128/e0e7ff/3730a3?text=Sin+Foto'">
+                            </div>
+                            <!-- Datos Principales -->
+                            <div class="flex-1">
+                                <h3 id="summary-name" class="text-2xl font-bold text-gray-900">Nombre del Colaborador</h3>
+                                <p id="summary-cargo" class="text-lg font-medium text-blue-700">Cargo</p>
+                                
+                                <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span class="font-medium text-gray-500 block">Documento</span>
+                                        <span id="summary-documento" class="text-gray-800">123456789</span>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-gray-500 block">Colaborador ID</span>
+                                        <span id="summary-colaborador-id" class="text-gray-800">EMP-001</span>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-gray-500 block">Email</span>
+                                        <span id="summary-email" class="text-gray-800">email@dominio.com</span>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-gray-500 block">Celular</span>
+                                        <span id="summary-celular" class="text-gray-800">300 123 4567</span>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-gray-500 block">Sueldo Base</span>
+                                        <span id="summary-sueldo" class="text-gray-800 font-semibold">$5,000,000</span>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-gray-500 block">Estado</span>
+                                        <span id="summary-estado" class="badge badge-activo">Activo</span>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                        
+                        <!-- Botón de Volver -->
+                        <div class="mt-6 pt-6 border-t border-gray-200 flex gap-3">
+                            <button type="button" id="summary-back-btn" class="px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                &larr; Volver al Listado
+                            </button>
+                        </div>
+                    </div>
+
+                </div> <!-- Fin rrhh-summary-view -->
+
+            </div>
+
+        </div>
+    </main>
+    
+    <!-- SCRIPT DE PÁGINA: RRHH -->
+    <script>
+      const SCRIPT_URL = '<?= url ?>';
+
+      // ==================================================================
+      // LISTADO CENTRAL DE IMÁGENES
+      // ==================================================================
+      /* // Se elimina imageConfig y populateImages porque el logo se puso directamente en el HTML.
+      const imageConfig = {
+          logo: "https://i.postimg.cc/BQ2Sp0T4/Logotransparente.png"
+      };
+
+      function populateImages() {
+          const images = document.querySelectorAll('[data-src-key]');
+          images.forEach(img => {
+              const key = img.getAttribute('data-src-key');
+              if (imageConfig[key]) {
+                  img.src = imageConfig[key];
+              }
+          });
+      }
+      */
+      // ==================================================================
+
+      // --- Lógica de la Página ---
+      document.addEventListener('DOMContentLoaded', () => {
+          
+          // populateImages(); // Eliminado
+          
+          // --- Almacén de datos y estado ---
+          let allCollaborators = [];
+          let selectedCollaborator = null;
+          
+          // --- Referencias DOM (Formulario) ---
+          const rrhhForm = document.getElementById('rrhh-form');
+          const formTitle = document.getElementById('form-title');
+          const formSubtitle = document.getElementById('form-subtitle');
+          const formSubmitBtn = document.getElementById('form-submit-btn');
+          const formEditBtn = document.getElementById('form-edit-btn');
+          const formCancelEditBtn = document.getElementById('form-cancel-edit-btn');
+          const formNewBtn = document.getElementById('form-new-btn');
+          const formFeedback = document.getElementById('form-feedback');
+          const colaboradorIdHidden = document.getElementById('colaborador-id-hidden');
+
+          // --- Referencias DOM (Vistas Derecha) ---
+          const rrhhListView = document.getElementById('rrhh-list-view');
+          const rrhhTbody = document.getElementById('rrhh-tbody');
+          const rrhhLoader = document.getElementById('rrhh-loader');
+          const rrhhEmpty = document.getElementById('rrhh-empty');
+          const searchInput = document.getElementById('search-input');
+          
+          const rrhhSummaryView = document.getElementById('rrhh-summary-view');
+          const summaryBackBtn = document.getElementById('summary-back-btn');
+
+          // --- Campos del Formulario ---
+          const formFields = {
+              Colaborador_ID: document.getElementById('colaborador-id'),
+              Nombre_Completo: document.getElementById('nombre-completo'),
+              Documento: document.getElementById('documento'),
+              Email: document.getElementById('email'), // NUEVO
+              Celular: document.getElementById('celular'), // NUEVO
+              Cargo: document.getElementById('cargo'),
+              Sueldo_base: document.getElementById('sueldo-base'),
+              Tipo_Contrato: document.getElementById('tipo-contrato'),
+              Estado: document.getElementById('estado'),
+              Foto_URL: document.getElementById('foto-url'), // NUEVO
+              Hoja_De_Vida_URL: document.getElementById('hoja-de-vida-url'),
+              Documento_CI_URL: document.getElementById('documento-ci-url'),
+              Contrato_Firmado_URL: document.getElementById('contrato-firmado-url')
+          };
+          
+          // --- Variables para alertas temporales ---
+          let alertTimeout = null;
+
+          // --- Lógica de Carga y Renderizado ---
+          
+          function mainLoad() {
+              loadCollaborators();
+              setFormMode('create'); // Estado inicial
+              
+              // Listeners de Formulario
+              rrhhForm.addEventListener('submit', handleFormSubmit);
+              formEditBtn.addEventListener('click', () => setFormMode('edit'));
+              formCancelEditBtn.addEventListener('click', () => {
+                  if (selectedCollaborator) {
+                      populateForm(selectedCollaborator); // Revierte cambios
+                  }
+                  setFormMode('view');
+              });
+              formNewBtn.addEventListener('click', () => {
+                  setFormMode('create');
+                  showListView();
+              });
+              
+              // Listeners de Vistas
+              searchInput.addEventListener('input', () => filterCollaboratorList());
+              summaryBackBtn.addEventListener('click', () => showListView());
+
+              // --- NUEVO: Listeners para Subida de Archivos ---
+              document.getElementById('foto-url-file').addEventListener('change', (e) => handleFileUpload(e, 'foto-url'));
+              document.getElementById('hoja-de-vida-url-file').addEventListener('change', (e) => handleFileUpload(e, 'hoja-de-vida-url'));
+              document.getElementById('documento-ci-url-file').addEventListener('change', (e) => handleFileUpload(e, 'documento-ci-url'));
+              document.getElementById('contrato-firmado-url-file').addEventListener('change', (e) => handleFileUpload(e, 'contrato-firmado-url'));
+          }
+
+          function loadCollaborators() {
+              rrhhLoader.classList.remove('hidden');
+              rrhhEmpty.classList.add('hidden');
+              rrhhTbody.innerHTML = '';
+              rrhhTbody.appendChild(rrhhLoader);
+              
+              google.script.run
+                  .withSuccessHandler(onCollaboratorsLoaded)
+                  .withFailureHandler(showError)
+                  .getColaboradores(); // Asumo que la función de backend se llama así
+          }
+          
+          function onCollaboratorsLoaded(response) {
+              rrhhLoader.classList.add('hidden');
+              if (response.success && response.colaboradores.length > 0) {
+                  allCollaborators = response.colaboradores;
+                  filterCollaboratorList(); // Renderizar la lista completa por defecto
+              } else {
+                  rrhhTbody.appendChild(rrhhEmpty);
+                  rrhhEmpty.classList.remove('hidden');
+              }
+              
+              // --- NUEVO: Asignar el primer ID consecutivo al formulario de creación ---
+              // Solo si estamos en modo 'create' (estado inicial)
+              if (!selectedCollaborator) {
+                  formFields.Colaborador_ID.value = getNextCollaboratorID();
+              }
+          }
+          
+          // NUEVO: Filtra y renderiza la tabla
+          function filterCollaboratorList() {
+              const searchTerm = searchInput.value.toLowerCase();
+              
+              const filteredList = allCollaborators.filter(c => {
+                  return (c.Nombre_Completo?.toLowerCase().includes(searchTerm) ||
+                          c.Documento?.toLowerCase().includes(searchTerm) ||
+                          c.Email?.toLowerCase().includes(searchTerm) ||
+                          c.Cargo?.toLowerCase().includes(searchTerm) ||
+                          c.Colaborador_ID?.toLowerCase().includes(searchTerm));
+              });
+              
+              renderTableRows(filteredList);
+          }
+          
+          // NUEVO: Solo renderiza las filas
+          function renderTableRows(collaborators) {
+              rrhhTbody.innerHTML = ''; // Limpiar solo las filas
+              
+              if (collaborators.length === 0) {
+                  rrhhEmpty.classList.remove('hidden');
+                  rrhhTbody.appendChild(rrhhEmpty);
+                  return;
+              }
+              
+              collaborators.forEach(item => {
+                  const tr = document.createElement('tr');
+                  tr.classList.add('hover:bg-gray-50');
+                  
+                  let estadoColor = getBadgeColor(item.Estado);
+
+                  // HTML de la Fila (sin botones de acción)
+                  tr.innerHTML = `
+                      <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm font-medium text-gray-900">${item.Nombre_Completo}</div>
+                          <div class="text-xs text-gray-500">ID: ${item.Colaborador_ID}</div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${item.Documento}</td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          <div>${item.Email || 'N/A'}</div>
+                          <div class="text-xs text-gray-500">${item.Celular || 'N/A'}</div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${item.Cargo}</td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${formatCurrency(item.Sueldo_base)}</td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="badge ${estadoColor}">
+                              ${item.Estado}
+                          </span>
+                      </td>
+                  `;
+                  
+                  // Listener de Clic en la Fila
+                  tr.addEventListener('click', () => handleRowClick(item));
+                  
+                  rrhhTbody.appendChild(tr);
+              });
+          }
+
+          // --- Lógica de Interacción ---
+          
+          function handleRowClick(collaborator) {
+              selectedCollaborator = collaborator;
+              
+              populateForm(collaborator);
+              setFormMode('view'); // Bloquear formulario
+              
+              renderSummaryView(collaborator);
+              showSummaryView(); // Mostrar ficha
+          }
+          
+          function handleFormSubmit(e) {
+              e.preventDefault();
+              formSubmitBtn.disabled = true;
+              showFormFeedback('Guardando...', true, false); // No limpiar
+              
+              const colaboradorObject = {
+                  Colaborador_ID_key: selectedCollaborator ? selectedCollaborator.Colaborador_ID : formFields.Colaborador_ID.value
+              };
+              
+              for (const key in formFields) {
+                  colaboradorObject[key] = formFields[key].value;
+              }
+              
+              google.script.run
+                  .withSuccessHandler(onSaveSuccess)
+                  .withFailureHandler(onSaveError)
+                  .saveColaborador(colaboradorObject); 
+          }
+
+          function onSaveSuccess(response) {
+              if (response.success && response.colaborador) {
+                  showFormFeedback('Colaborador guardado exitosamente.', true);
+                  
+                  // Actualizar la lista local
+                  const index = allCollaborators.findIndex(c => c.Colaborador_ID === response.colaborador.Colaborador_ID);
+                  if (index > -1) {
+                      allCollaborators[index] = response.colaborador;
+                  } else {
+                      allCollaborators.push(response.colaborador);
+                  }
+                  
+                  // Refrescar la tabla
+                  filterCollaboratorList();
+                  
+                  // Poblar formulario y ficha con los datos actualizados
+                  selectedCollaborator = response.colaborador;
+                  populateForm(selectedCollaborator);
+                  renderSummaryView(selectedCollaborator);
+                  
+                  // Cambiar a modo vista
+                  setFormMode('view');
+                  showSummaryView();
+
+              } else {
+                  onSaveError(new Error(response.message || 'Error desconocido al guardar.'));
+              }
+          }
+          
+          function onSaveError(error) {
+              showFormFeedback(error.message, false);
+              setFormMode(selectedCollaborator ? 'edit' : 'create'); // Desbloquear botón
+          }
+
+          // --- NUEVO: Generar ID Consecutivo ---
+          /**
+           * Genera el siguiente ID de colaborador consecutivo.
+           * Asume un formato "PRE-001"
+           */
+          function getNextCollaboratorID() {
+              const prefix = "EMP-"; // Define el prefijo
+              let maxId = 0;
+              
+              allCollaborators.forEach(c => {
+                  if (c.Colaborador_ID && c.Colaborador_ID.startsWith(prefix)) {
+                      const numPart = c.Colaborador_ID.substring(prefix.length);
+                      const num = parseInt(numPart, 10);
+                      if (!isNaN(num) && num > maxId) {
+                          maxId = num;
+                      }
+                  }
+              });
+              
+              // Incrementar y formatear con ceros a la izquierda (ej: 001, 002, ... 010, ... 100)
+              const nextIdNum = maxId + 1;
+              const nextIdFormatted = nextIdNum.toString().padStart(3, '0');
+              
+              return `${prefix}${nextIdFormatted}`;
+          }
+
+          // --- NUEVO: Lógica de Subida de Archivos ---
+
+          /**
+           * Maneja el evento de selección de archivo.
+           * Lee el archivo como Base64 y lo envía a Google Apps Script.
+           */
+          function handleFileUpload(event, targetUrlInputId) {
+              const file = event.target.files[0];
+              if (!file) return;
+
+              // Mostrar feedback de carga (buscando el label)
+              const label = document.querySelector(`label[for="${event.target.id}"]`);
+              const originalLabelText = label ? label.textContent : 'Subir Archivo';
+              if (label) {
+                label.textContent = 'Subiendo... ⏳';
+                label.classList.add('animate-pulse');
+              }
+              event.target.disabled = true;
+
+              const reader = new FileReader();
+              reader.readAsDataURL(file);
+              
+              reader.onload = () => {
+                  const [fileInfo, base64Data] = reader.result.split(',');
+                  
+                  const fileData = {
+                      fileName: file.name,
+                      mimeType: file.type,
+                      data: base64Data
+                  };
+                  
+                  // Pasamos el 'targetUrlInputId' para que el backend sepa a quién responder
+                  google.script.run
+                      .withSuccessHandler((response) => onFileUploadSuccess(response, label, originalLabelText, event.target))
+                      .withFailureHandler((error) => onFileUploadError(error, label, originalLabelText, event.target)) // Usar la nueva función de error
+                      .uploadFileToDrive(fileData, targetUrlInputId);
+              };
+              
+              reader.onerror = (error) => {
+                  console.error('Error leyendo el archivo:', error);
+                  if (label) {
+                    label.textContent = 'Error al leer ❌';
+                    label.classList.remove('animate-pulse');
+                  }
+                  event.target.disabled = false;
+                  setTimeout(() => { if (label) label.textContent = originalLabelText; }, 3000);
+              };
+          }
+
+          /**
+           * Se ejecuta cuando la subida de archivo es exitosa.
+           */
+          function onFileUploadSuccess(response, label, originalLabelText, fileInput) {
+              fileInput.disabled = false;
+              if (label) label.classList.remove('animate-pulse');
+              
+              if (response.success) {
+                  // ¡Éxito! Poner la nueva URL en el campo de texto oculto
+                  document.getElementById(response.targetId).value = response.newUrl;
+                  if (label) label.textContent = '¡Subido! ✅';
+                  console.log('Archivo subido:', response.newUrl);
+                  
+                  // Si estamos en modo 'edit', guardamos el cambio de URL inmediatamente
+                  if(selectedCollaborator) {
+                    handleFormSubmit(new Event('submit'));
+                  }
+                  
+              } else {
+                  // El backend devolvió un error
+                  console.error('Error del servidor al subir:', response.message);
+                  if (label) label.textContent = 'Error al subir ❌';
+              }
+              
+              // Resetear el label después de 3 segundos
+              setTimeout(() => { if (label) label.textContent = originalLabelText; }, 3000);
+          }
+
+          /**
+           * Se ejecuta cuando la subida de archivo falla (error de red/Apps Script).
+           */
+          function onFileUploadError(error, label, originalLabelText, fileInput) {
+              fileInput.disabled = false;
+              if (label) label.classList.remove('animate-pulse');
+              console.error('Error al llamar a uploadFileToDrive:', error);
+              if (label) label.textContent = 'Error fatal ❌';
+              
+              // Resetear el label después de 3 segundos
+              setTimeout(() => { if (label) label.textContent = originalLabelText; }, 3000);
+          }
+
+          // --- Fin de Lógica de Subida de Archivos ---
+
+
+          // --- Funciones de Utilidad (Helpers) ---
+          
+          function populateForm(collaborator) {
+              for (const key in formFields) {
+                  if (collaborator.hasOwnProperty(key)) {
+                      formFields[key].value = collaborator[key];
+                  } else {
+                      // Limpiar campos que no vienen en el objeto (ej. al crear nuevo)
+                      formFields[key].value = '';
+                  }
+              }
+              // Manejar caso especial de sueldo 0
+              if (collaborator.Sueldo_base) {
+                formFields.Sueldo_base.value = collaborator.Sueldo_base;
+              } else {
+                formFields.Sueldo_base.value = 0;
+              }
+          }
+          
+          function renderSummaryView(collaborator) {
+              // Poblar la foto
+              document.getElementById('summary-img').src = collaborator.Foto_URL || 'https://placehold.co/128x128/e0e7ff/3730a3?text=Sin+Foto';
+              
+              // Poblar datos de texto
+              document.getElementById('summary-name').textContent = collaborator.Nombre_Completo;
+              document.getElementById('summary-cargo').textContent = collaborator.Cargo;
+              document.getElementById('summary-documento').textContent = collaborator.Documento;
+              document.getElementById('summary-colaborador-id').textContent = collaborator.Colaborador_ID;
+              document.getElementById('summary-email').textContent = collaborator.Email || 'N/A';
+              document.getElementById('summary-celular').textContent = collaborator.Celular || 'N/A';
+              document.getElementById('summary-sueldo').textContent = formatCurrency(collaborator.Sueldo_base);
+              
+              // Poblar estado (con badge)
+              const estadoBadge = document.getElementById('summary-estado');
+              estadoBadge.textContent = collaborator.Estado;
+              estadoBadge.className = `badge ${getBadgeColor(collaborator.Estado)}`;
+          }
+          
+          function setFormMode(mode) {
+              // Deshabilitar todos los campos
+              let isLocked = (mode === 'view');
+              for (const key in formFields) {
+                  // MODIFICADO: No deshabilitar el campo de ID, ya es readonly
+                  if (key !== 'Colaborador_ID') {
+                    formFields[key].disabled = isLocked;
+                  }
+              }
+              
+              // Habilitar los inputs de archivo y botones de 'ver' siempre, excepto si está bloqueado
+              const fileLabels = document.querySelectorAll('label[for$="-file"]');
+              const viewButtons = document.querySelectorAll('button[onclick*="window.open"]');
+              
+              fileLabels.forEach(label => {
+                  label.style.pointerEvents = isLocked ? 'none' : 'auto';
+                  label.style.opacity = isLocked ? '0.7' : '1';
+              });
+              viewButtons.forEach(button => button.disabled = isLocked);
+              
+              if (mode === 'create') {
+                  rrhhForm.reset();
+                  // --- NUEVO: Generar ID automático ---
+                  formFields.Colaborador_ID.value = getNextCollaboratorID(); 
+                  formTitle.textContent = 'Crear Colaborador';
+                  formSubtitle.textContent = 'Añada un nuevo colaborador al maestro.';
+                  formSubmitBtn.textContent = 'Guardar Colaborador';
+                  
+                  formSubmitBtn.classList.remove('hidden');
+                  formEditBtn.classList.add('hidden');
+                  formCancelEditBtn.classList.add('hidden');
+                  formNewBtn.classList.add('hidden');
+                  
+                  formSubmitBtn.disabled = false;
+                  selectedCollaborator = null;
+              } 
+              else if (mode === 'view') {
+                  formTitle.textContent = 'Ver Colaborador';
+                  formSubtitle.textContent = 'Haga clic en "Habilitar Edición" para modificar.';
+                  
+                  formSubmitBtn.classList.add('hidden');
+                  formEditBtn.classList.remove('hidden');
+                  formCancelEditBtn.classList.add('hidden');
+                  formNewBtn.classList.remove('hidden');
+              } 
+              else if (mode === 'edit') {
+                  // El campo ID ya es readonly, no se necesita deshabilitar.
+                  formTitle.textContent = 'Editando Colaborador';
+                  formSubtitle.textContent = 'Actualice los datos y guarde los cambios.';
+                  formSubmitBtn.textContent = 'Actualizar Cambios';
+                  
+                  formSubmitBtn.classList.remove('hidden');
+                  formEditBtn.classList.add('hidden');
+                  formCancelEditBtn.classList.remove('hidden');
+                  formNewBtn.classList.remove('hidden');
+                  
+                  formSubmitBtn.disabled = false;
+              }
+          }
+          
+          function showListView() {
+              rrhhSummaryView.classList.add('hidden');
+              rrhhListView.classList.remove('hidden');
+          }
+          
+          function showSummaryView() {
+              rrhhListView.classList.add('hidden');
+              rrhhSummaryView.classList.remove('hidden');
+          }
+
+          function getBadgeColor(estado) {
+              if (estado === 'Activo') return 'badge-activo';
+              if (estado === 'Inactivo') return 'badge-inactivo';
+              if (estado === 'Vacaciones') return 'badge-vacaciones';
+              if (estado === 'Licencia') return 'badge-licencia';
+              return 'badge-default';
+          }
+
+          function formatCurrency(value) {
+              if (value === null || value === undefined || isNaN(Number(value))) {
+                  return "$0";
+              }
+              return new Intl.NumberFormat('es-CO', { 
+                  style: 'currency', 
+                  currency: 'COP', 
+                  minimumFractionDigits: 0 
+              }).format(value);
+          }
+          
+          function showFormFeedback(message, isSuccess, autoClear = true) {
+              formFeedback.textContent = message;
+              formFeedback.className = isSuccess ? 'text-sm text-green-600' : 'text-sm text-red-600';
+              
+              if(autoClear) {
+                setTimeout(() => {
+                    formFeedback.textContent = '';
+                }, 4000);
+              }
+          }
+          
+          // Reemplazo de alert()
+          function showTempAlert(buttonElement, message) {
+            if (alertTimeout) {
+                clearTimeout(alertTimeout);
+                const prevButton = document.querySelector('.alert-active');
+                if(prevButton) prevButton.textContent = 'Ver';
+            }
+            
+            const originalText = buttonElement.textContent;
+            buttonElement.textContent = message;
+            buttonElement.classList.add('alert-active');
+            buttonElement.disabled = true;
+            
+            alertTimeout = setTimeout(() => {
+                buttonElement.textContent = originalText;
+                buttonElement.disabled = false;
+                buttonElement.classList.remove('alert-active');
+                alertTimeout = null;
+            }, 2000);
+          }
+
+          function showError(error) {
+              console.error('Error en Google Apps Script:', error);
+              rrhhLoader.classList.add('hidden');
+              rrhhTbody.innerHTML = `
+                  <tr>
+                      <td colspan="6" class="px-6 py-12 text-center text-red-600">
+                          <strong>Error al cargar:</strong> ${error.message}
+                      </td>
+                  </tr>`;
+          }
+
+          // Variable global para evitar múltiples clics
+          let navClicked = false;
+          function handleNavigation(pageId) {
+              if (navClicked) return; // Prevenir doble clic
+              navClicked = true;
+              
+              if (pageId === 'INDEX') {
+                  window.top.location.href = SCRIPT_URL;
+              } else {
+                  window.top.location.href = SCRIPT_URL + "?page=" + pageId;
+              }
+          }
+
+          function runWhenReady(func) {
+              if (typeof google !== 'undefined' && google.script && google.script.run) {
+                  func();
+              } else {
+                  setTimeout(() => runWhenReady(func), 100);
+              }
+          }
+
+          runWhenReady(mainLoad);
+          
+          // Asignar la función de alerta al objeto window para que el HTML inline la vea
+          window.showTempAlert = showTempAlert;
+          window.handleNavigation = handleNavigation;
+      });
+    </script>
+</body>
+</html>

@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Principal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+     
+    
+    <style>
+        /* Define la fuente base para toda la página */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* bg-gray-100 */
+        }
+        
+/* --- ESTILOS PARA LOS BOTONES "LOGO" --- */
+        .logos-container {
+          display: grid;
+          /* Define un grid fijo de 3 columnas */
+          grid-template-columns: repeat(3, 1fr);
+          width: 100%;
+          gap: 1rem; /* 16px */
+          transition: all 0.48s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .logo {
+          min-height: 120px; /* Altura mínima */
+          display: flex;
+          flex-direction: column; 
+          align-items: center;
+          justify-content: center;
+          gap: 12px; /* <-- GAP INTERNO REDUCIDO */
+          padding: 16px; 
+          border-radius: 12px;
+          /* El color de fondo se maneja con Tailwind */
+          transition: all 0.48s cubic-bezier(0.23, 1, 0.32, 1);
+          cursor: pointer;
+        }
+
+        .logo img { /* <-- CAMBIADO A IMG */
+          width: 140px; /* <-- TAMAÑO ICONO REDUCIDO */
+          height: 140px; /* <-- TAMAÑO ICONO REDUCIDO */
+          object-fit: contain; /* Asegura que la imagen se vea bien */
+          transition: all 0.48s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        
+        .logo-title {
+          font-size: 1rem; /* 16px - TAMAÑO TEXTO REDUCIDO */
+          font-weight: 600;
+          text-align: center;
+          /* El color de texto se maneja con Tailwind */
+          transition: all 0.48s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .logo:hover {
+          /* El color de fondo :hover se maneja con Tailwind */
+          transform: translateY(-4px);
+          box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        
+        /* Quitamos los :hover de svg y logo-title */
+
+        .logos-container:hover .logo:not(:hover) {
+          transform: scale(0.95);
+          opacity: 0.7;
+          filter: none; /* Quitamos el grayscale */
+        }
+        
+        /* --- ESTILOS PARA EL SCREENSAVER (Marquee) --- */
+        #screensaver-screen .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: #fff;
+            border: 9px solid #DEE1E4;
+            overflow: hidden;
+            animation: cloud-loop-ss 0.7s ease infinite alternate;
+        }
+        #screensaver-screen .logo-track {
+            display: flex;
+            width: calc(2 * (4 * (100px + 16px))); 
+            animation: marquee 10s linear infinite;
+        }
+        #screensaver-screen .logo-track img {
+            width: 100px;
+            margin: 0 8px;
+        }
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); } 
+        }
+        @keyframes cloud-loop-ss {
+            0% { transform: translateY(5px); }
+            100% { transform: translateY(-5px); }
+        }
+
+        /* --- ESTILOS PARA EL FOOTER Y FLIP COUNTERS --- */
+        
+        .footer-card-grid {
+          display: grid;
+          grid-template-columns: repeat(1, 1fr); 
+          gap: 1.5rem; /* 24px */
+        }
+        @media (min-width: 768px) {
+          .footer-card-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+        @media (min-width: 1024px) {
+          .footer-card-grid {
+            grid-template-columns: repeat(4, 1fr);
+          }
+        }
+
+          .footer-card {
+          background-color: white;
+          border-radius: 0.5rem; /* 8px */
+          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+          padding: 0.75rem; /* 12px - TAMAÑO REDUCIDO */
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.25rem; /* 4px */
+        }
+        .footer-card-title {
+          font-size: 0.875rem; /* 14px */
+          font-weight: 500;
+          color: #6b7280; /* text-gray-500 */
+        }
+        
+/* --- INICIO: NUEVOS ESTILOS FOOTER --- */
+.card {
+  height: 70px; /* Altura fija */
+  background: #00008B;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: left;
+  backdrop-filter: blur(10px);
+  transition: 0.5s ease-in-out;
+  padding: 0 10px; /* Padding horizontal */
+}
+
+.card:hover {
+  cursor: pointer;
+  transform: scale(1.05);
+}
+
+.img {
+  width: 50px;
+  height: 50px;
+  margin-left: 10px;
+  border-radius: 10px;
+  background: linear-gradient(#d7cfcf, #9198e5);
+}
+
+.card:hover > .img {
+  transition: 0.5s ease-in-out;
+  background: linear-gradient(#9198e5, #712020);
+}
+
+.textBox {
+  width: calc(100% - 70px); /* Ajustado al nuevo padding/margin */
+  margin-left: 10px;
+  color: white;
+}
+
+.textContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.span {
+  font-size: 10px;
+  color: #aaa; /* Color más suave para el título */
+}
+
+.h1 {
+  font-size: 16px;
+  font-weight: bold;
+  /* El color (verde/rojo) se aplicará con JS */
+}
+
+.p {
+  font-size: 12px;
+  font-weight: lighter;
+  color: #ddd; /* Color más suave para el dato secundario */
+}
+/* --- FIN: NUEVOS ESTILOS FOOTER --- */
+
+        /* Estilos para la librería FLIP (Tick.js) */
+        .tick {
+            font-size: 1.5rem; /* 24px - TAMAÑO REDUCIDO */
+            font-weight: 600;
+            white-space: nowrap; 
+        }
+/* Colores para los nuevos contadores de texto */
+        .tick-green { color: #22c55e; } /* text-green-500 */
+        .tick-red { color: #ef4444; }   /* text-red-500 */
+
+    </style>
+</head>
+<body class="h-full bg-gray-100">
+
+
+    <div id="login-screen" class="fixed inset-0 bg-blue-600 flex items-center justify-center p-6 z-50">
+        <div class="bg-white p-8 md:p-12 rounded-2xl shadow-2xl w-full max-w-md text-center">
+            <img data-src-key="logo" alt="Logo" class="h-16 w-auto mx-auto mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Iniciar Sesión</h2>
+                           
+            <p class="text-gray-500 mb-6">Gestión y Control VERP</p>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="username" class="sr-only">Usuario</label>
+                    <input type="text" id="username" name="username" placeholder="Email, Usuario o Nombre" required
+                           class="w-full px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="sr-only">Contraseña</label>
+                    <input type="password" id="password" name="password" placeholder="Tu contraseña" required
+                           class="w-full px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                </div>
+                <button type="submit" id="login-button"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300">
+                    Acceder
+                </button>
+                <p id="login-error" class="text-red-500 text-sm mt-4 h-5"></p>
+            </form>
+        </div>
+    </div>
+
+    <div id="dashboard-screen" class="h-full bg-blue-600 p-6 hidden z-10 overflow-y-auto">
+        <div class="w-full max-w-6xl mx-auto"> 
+            
+             <div class="w-full flex justify-between items-center pt-8 pb-10">
+                
+                <img data-src-key="logo" alt="Logo" 
+                     class="h-14 w-auto cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-95 hover:drop-shadow-lg" 
+                     onclick="loadDashboardData()">
+                
+                <div class="flex items-center gap-4">
+                    <span id="welcome-message" class="text-white font-medium text-sm hidden sm:block"></span>
+                    <button id="logout-button" class="bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 rounded-lg text-sm transition-colors">
+                        Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+            <div class="pb-10">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+    <button 
+  id="card-pedidos" 
+  class="bg-white rounded-lg shadow-md p-5 flex items-center gap-4 group relative text-left"
+  onclick="handleNavigation('PEDIDOS')">
+
+    <div id="pedidos-notificacion" class="absolute -right-2 -top-2 z-10 hidden">
+        <div class="flex h-5 w-5 items-center justify-center">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+            <span id="pedidos-notificacion-valor" class="relative inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">0</span>
+        </div>
+    </div>
+    <div class="relative bg-blue-100 text-blue-600 p-3 rounded-full transition-transform duration-300 group-hover:scale-110">
+        <img src="https://cdn-icons-png.flaticon.com/512/4829/4829979.png" class="w-6 h-6" alt="Pedidos">
+        <div class="absolute inset-0 rounded-full bg-blue-500/50 blur-sm transition-all duration-300 group-hover:blur-md"></div>
+    </div>
+    <div>
+        <div class="text-gray-400 text-sm font-medium">Pedidos Pendientes</div>
+        <div id="pedidos-valor" class="text-2xl font-bold text-gray-900">...</div>
+    </div>
+</button>
+
+    <div id="card-obligaciones" class="bg-white rounded-lg shadow-md p-5 flex items-center gap-4 group relative">
+        <div id="obligaciones-notificacion" class="absolute -right-2 -top-2 z-10 hidden">
+            <div class="flex h-5 w-5 items-center justify-center">
+                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+                <span id="obligaciones-notificacion-valor" class="relative inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">0</span>
+            </div>
+        </div>
+        <div class="relative bg-yellow-100 text-yellow-600 p-3 rounded-full transition-transform duration-300 group-hover:scale-110">
+            <img src="https://cdn-icons-png.flaticon.com/512/9869/9869916.png" class="w-6 h-6" alt="Obligaciones">
+            <div class="absolute inset-0 rounded-full bg-yellow-500/50 blur-sm transition-all duration-300 group-hover:blur-md"></div>
+        </div>
+        <div>
+            <div class="text-gray-400 text-sm font-medium">Obligaciones</div>
+            <div id="obligaciones-valor" class="text-2xl font-bold text-gray-900">...</div>
+        </div>
+    </div>
+
+    <div id="card-dolar" class="bg-white rounded-lg shadow-md p-5 flex items-center gap-4 group relative">
+        <div class="relative bg-green-100 text-green-600 p-3 rounded-full transition-transform duration-300 group-hover:scale-110">
+            <svg class="w-6 h-6" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 392.598 392.598" xml:space="preserve">
+                <g><path style="fill:#FFFFFF;" d="M370.78,157.996V32.711c0-6.012-4.848-10.925-10.925-10.925H32.743 c-6.012,0-10.925,4.848-10.925,10.925v125.35c0,6.012,4.848,10.925,10.925,10.925h327.111 C365.931,168.921,370.78,164.073,370.78,157.996z"></path><path style="fill:#194F82;" d="M284.8,212.364H161.39c-17.778,0-32.323,14.481-32.323,32.323s14.481,32.323,32.323,32.323h54.044 c7.046,0,12.8,5.689,12.8,12.8c0,7.046-5.689,12.8-12.8,12.8h-62.513c-8.727,0-17.131-3.168-23.596-8.857l-74.731-68.202 c-11.895-10.602-32.453-11.96-46.158,3.038C-2.683,241.39-2.23,260.267,9.6,272.485l99.362,102.465 c10.731,11.184,25.859,17.648,41.309,17.648h155.087c6.012,0,10.925-4.848,10.925-10.925c0-6.012-4.849-10.925-10.925-10.925 H150.335c-9.632,0-19.006-3.943-25.665-10.925L25.244,257.228c-3.879-4.008-4.008-10.214-0.388-14.481 c4.202-4.59,9.956-4.848,15.063-1.099l74.731,68.137c10.537,9.374,24.113,14.545,38.141,14.545h62.513 c19.071,0,34.586-15.515,34.586-34.586c0-19.071-15.515-34.586-34.586-34.586h-54.044c-5.818,0-10.537-4.719-10.537-10.537 c0-5.818,4.719-10.537,10.537-10.537h123.41c17.131,0,33.358,7.176,44.606,19.717c17.325,19.394,38.529,52.945,41.438,102.594 c0.323,6.012,5.495,10.667,11.507,10.279c6.012-0.323,10.602-5.495,10.279-11.507c-3.232-56.048-27.281-93.931-46.998-115.911 C330.311,222.255,308.137,212.364,284.8,212.364z"></path><ellipse style="fill:#56ACE0;" cx="196.299" cy="95.224" rx="57.406" ry="68.848"></ellipse><path style="fill:#FFC10D;" d="M329.341,253.673c-11.184-12.541-27.41-19.717-44.606-19.717H161.39 c-5.818,0-10.537,4.719-10.537,10.537c0,5.818,4.719,10.537,10.537,10.537h54.044c19.071,0,34.586,15.515,34.586,34.586 c0,19.071-15.515,34.586-34.586,34.586h-62.513c-14.093,0-27.669-5.172-38.141-14.545l-74.796-68.137 c-2.004-1.875-4.784-2.715-7.628-2.521s-5.495,1.487-7.434,3.62c-3.62,4.202-3.491,10.408,0.388,14.481l99.426,102.594 c6.723,6.982,16.097,10.925,25.665,10.925h155.087c4.784,0,8.792,3.103,10.279,7.434l55.661-18.747 c-0.323-0.905-0.517-1.875-0.646-2.844C367.935,306.618,346.667,273.067,329.341,253.673z"></path><g><path style="fill:#194F82;" d="M359.855,0H32.743C14.707,0,0.032,14.675,0.032,32.711v125.35c0,18.036,14.675,32.711,32.711,32.711 h327.111c18.036,0,32.711-14.675,32.711-32.711V32.711C392.566,14.675,377.891,0,359.855,0z M370.78,157.996 c0,6.012-4.848,10.925-10.925,10.925H32.743c-6.012,0-10.925-4.848-10.925-10.925V32.711c0-6.012,4.848-10.925,10.925-10.925 h327.111c6.012,0,10.925,4.848,10.925,10.925v125.35l0,0V157.996z"></path><path style="fill:#194F82;" d="M333.22,75.119c-6.012,0-10.925,4.848-10.925,10.925v18.683c0,6.012,4.848,10.925,10.925,10.925 c6.012,0,10.925-4.848,10.925-10.925V86.044C344.145,79.968,339.232,75.119,333.22,75.119z"></path><path style="fill:#194F82;" d="M59.378,75.119c-6.012,0-10.925,4.848-10.925,10.925v18.683c0,6.012,4.848,10.925,10.925,10.925 s10.925-4.848,10.925-10.925V86.044C70.238,79.968,65.39,75.119,59.378,75.119z"></path><path style="fill:#194F82;" d="M189.964,67.362h32.065c6.012,0,10.925-4.848,10.925-10.925s-4.848-10.925-10.925-10.925h-9.956 v-3.879c0-6.012-4.848-10.925-10.925-10.925s-10.925,4.848-10.925,10.925v3.879h-0.323c-16.743,0-30.384,13.576-30.384,30.384 s13.576,30.384,30.384,30.384h12.671c4.719,0,8.469,3.879,8.469,8.469c0,4.719-3.879,8.469-8.469,8.469h-32.065 c-6.012,0-10.925,4.848-10.925,10.925c0,6.012,4.848,10.925,10.925,10.925h19.717v3.879c0,6.012,4.848,10.925,10.925,10.925 c6.012,0,10.925-4.848,10.925-10.925v-5.43c12.154-4.008,20.881-15.386,20.881-28.832c0-16.743-13.576-30.384-30.384-30.384 h-12.671c-4.719,0-8.469-3.879-8.469-8.469C181.495,71.176,185.244,67.362,189.964,67.362z"></path></g></g>
+            </svg>
+            <div class="absolute inset-0 rounded-full bg-green-500/50 blur-sm transition-all duration-300 group-hover:blur-md"></div>
+        </div>
+        <div>
+            <div class="text-gray-400 text-sm font-medium">Tasa USD (COP)</div>
+            <div class="flex items-center gap-2">
+                <div id="dolar-valor" class="text-2xl font-bold text-gray-900">...</div>
+                <div id="dolar-cambio" class="text-sm font-medium"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="card-balance" class="bg-white rounded-lg shadow-md p-5 flex items-center gap-4 group relative">
+        <div id="ganancia-icono-wrapper" class="relative bg-purple-100 text-purple-600 p-3 rounded-full transition-transform duration-300 group-hover:scale-110">
+            <svg id="ganancia-icono" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+            </svg>
+            <div id="ganancia-blur-div" class="absolute inset-0 rounded-full bg-purple-500/50 blur-sm transition-all duration-300 group-hover:blur-md"></div>
+        </div>
+        <div>
+            <div class="text-gray-400 text-sm font-medium">Ganancia Total</div>
+            <div id="ganancia-valor" class="tick text-gray-800">$ 0,00</div>
+        </div>
+    </div>
+
+</div>
+            </div>
+           <div class="logos-container pb-12" style="padding-bottom: 30px;">
+                
+                                <div class="logo bg-red-100 text-red-700 hover:bg-red-600 hover:text-white" onclick="handleNavigation('CLIENTES')">
+                    <img src="https://i.postimg.cc/XJnkY2qh/6009864-removebg-preview.png" alt="Clientes">
+                    <span class="logo-title">Clientes</span>
+                </div>
+                
+                                <div class="logo bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white" onclick="handleNavigation('PRODUCTOS')">
+                    <img src="https://cdn3d.iconscout.com/3d/premium/thumb/product-5806313-4863042.png" alt="Productos">
+                    <span class="logo-title">Productos</span>
+                </div>
+
+                                <div class="logo bg-yellow-100 text-yellow-800 hover:bg-yellow-500 hover:text-white" onclick="handleNavigation('VENTAS')">
+                    <img src="https://static.vecteezy.com/system/resources/previews/019/049/666/original/gold-coin-money-symbol-icon-png.png" alt="Ventas">
+                    <span class="logo-title">Ventas</span>
+                </div>
+                
+                                <div class="logo bg-green-100 text-green-700 hover:bg-green-600 hover:text-white" onclick="handleNavigation('COMPRAS')">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3225/3225194.png" alt="Compras">
+                    <span class="logo-title">Compras</span>
+                </div>
+
+                                <div class="logo bg-purple-100 text-purple-700 hover:bg-purple-600 hover:text-white" onclick="handleNavigation('PRODUCCION')">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3712/3712210.png" alt="Producción">
+                    <span class="logo-title">Producción</span>
+                </div>
+                
+                                <div class="logo bg-indigo-100 text-indigo-700 hover:bg-indigo-600 hover:text-white" onclick="handleNavigation('INVENTARIO')">
+                    <img src="https://cdn-icons-png.flaticon.com/512/10469/10469240.png" alt="Inventario">
+                    <span class="logo-title">Inventario</span>
+            </div>
+                
+                                <div class="logo bg-pink-100 text-pink-700 hover:bg-pink-600 hover:text-white" onclick="handleNavigation('REPORTES')">
+                    <img src="https://cdn-icons-png.flaticon.com/512/11068/11068821.png" alt="Reportes">
+                    <span class="logo-title">Reportes</span>
+              </div>
+                
+                             <div class="logo bg-teal-100 text-teal-700 hover:bg-teal-600 hover:text-white" onclick="handleNavigation('NOMINA')">
+                <img src="https://cdn3.iconfinder.com/data/icons/economy-9/64/Fiscal-policy-saving-document-financial-512.png" alt="GESTIÓN INETERNA">
+                    <span class="logo-title">Gestión Interna</span>
+              </div>
+                             <div class="logo bg-gray-200 text-gray-800 hover:bg-gray-600 hover:text-white" onclick="handleNavigation('CONFIG')">
+                    <img src="https://cdn2.iconfinder.com/data/icons/computer-science-soft-fill/60/Document_Configuration-settings-file-1024.png" alt="Configuracion">
+                    <span class="logo-title">Configuración</span>
+                </div>
+                
+                                
+            </div>
+
+            <footer class="footer-card-grid pt-4 pb-12">
+
+    <div class="card">
+      <div class="img"></div>
+      <div class="textBox">
+        <div class="textContent">
+          <p class="h1 tick-green" id="insumos-valor-principal">$ 0,00</p>
+          <span class="span">INSUMOS</span>
+        </div>
+        <p class="p" id="insumos-valor-secundario">Maquinaria: $ 0,00</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="img"></div>
+      <div class="textBox">
+        <div class="textContent">
+          <p class="h1 tick-green" id="productos-valor-principal">$ 0,00</p>
+          <span class="span">PRODUCTOS</span>
+        </div>
+        <p class="p" id="productos-valor-secundario">Costo: $ 0,00</p>
+      </div>
+    </div>
+    
+
+    <div class="card">
+      <div class="img"></div>
+      <div class="textBox">
+        <div class="textContent">
+          <p class="h1" id="debe-valor-principal">$ 0,00</p>
+          <span class="span">DEUDA</span>
+        </div>
+        <p class="p" id="debe-valor-secundario">Pagado: $ 0,00</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="img"></div>
+      <div class="textBox">
+        <div class="textContent">
+          <p class="h1 tick-green" id="cash-valor-principal">$ 0,00</p>
+          <span class="span">CAJA</span>
+        </div>
+        <p class="p" id="cash-valor-secundario">Efectivo: $ 0,00</p>
+      </div>
+    </div>
+
+
+
+</footer>  
+
+
+            </div>
+    </div>
+    
+    <div id="screensaver-screen" class="fixed inset-0 z-40 hidden cursor-pointer bg-black/100 backdrop-blur-sm" >
+        <div class="h-full w-full flex justify-center items-center">
+            <div class="logo-container">
+                <div class="logo-track">
+                    <img data-src-key="logo" alt="Logo Animado">
+                    <img data-src-key="logo" alt="Logo Animado">
+                    <img data-src-key="logo" alt="Logo Animado">
+                    <img data-src-key="logo" alt="Logo Animado">
+                    <img data-src-key="logo" alt="Logo Animado">
+                    <img data-src-key="logo" alt="Logo Animado">
+                    <img data-src-key="logo" alt="Logo Animado">
+                    <img data-src-key="logo" alt="Logo Animado">
+                </div>
+            </div>
+        </div>
+</div>      
+    
+    <script>
+
+      const SCRIPT_URL = '<?= url ?>';
+      
+        // ==================================================================
+        // LISTADO CENTRAL DE IMÁGENES
+        // ==================================================================
+        const imageConfig = {
+            logo: "https://i.postimg.cc/BQ2Sp0T4/Logotransparente.png"
+        };
+
+        function populateImages() {
+            const images = document.querySelectorAll('[data-src-key]');
+            images.forEach(img => {
+                const key = img.getAttribute('data-src-key');
+                if (imageConfig[key]) {
+                    img.src = imageConfig[key];
+                }
+            });
+        }
+        // ==================================================================
+
+        // --- LÓGICA DE LA APLICACIÓN ---
+
+        let inactivityTimer;
+        const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
+        let currentUser = null; 
+        
+        // --- ¡LÍNEAS FALTANTES! ---
+      let dataRefreshTimer;
+      const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutos
+      // --- Fin de líneas faltantes ---
+
+        // --- REFERENCIAS AL DOM ---
+        const loginScreen = document.getElementById('login-screen');
+        const dashboardScreen = document.getElementById('dashboard-screen');
+        const screensaverScreen = document.getElementById('screensaver-screen');
+        const loginForm = document.getElementById('login-form');
+        const loginButton = document.getElementById('login-button');
+        const loginError = document.getElementById('login-error');
+        const logoutButton = document.getElementById('logout-button');
+        const welcomeMessage = document.getElementById('welcome-message');
+
+
+
+
+        function showLogin() {
+            // --- ¡NUEVA LÍNEA! ---
+            // Limpiamos la sesión guardada cada vez que mostramos el login
+            sessionStorage.removeItem('erpUser');
+            // --- FIN LÍNEA NUEVA ---
+
+            loginScreen.classList.remove('hidden');
+            dashboardScreen.classList.add('hidden');
+            screensaverScreen.classList.add('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            loginError.textContent = '';
+            welcomeMessage.textContent = '';
+        }
+
+        function showDashboard() {
+            loginScreen.classList.add('hidden');
+            dashboardScreen.classList.remove('hidden');
+            screensaverScreen.classList.add('hidden');
+        }
+        
+        function showScreensaver() {
+            screensaverScreen.classList.remove('hidden'); 
+        }
+        
+        function unlockScreen() {
+            if (currentUser) {
+                google.script.run.logAudit(currentUser.email, 'UNLOCK_TO_LOGIN', 'Desbloqueo forzado a Login');
+            }
+            clearTimeout(inactivityTimer);
+    stopDataRefreshTimer(); // <-- AÑADE ESTO
+    currentUser = null; 
+    showLogin();
+        }
+
+
+function stopDataRefreshTimer() {
+          clearInterval(dataRefreshTimer);
+          console.log('Actualización automática de datos detenida.');
+      }
+        /**
+ * Inicia el temporizador de actualización de datos.
+ * Llama a loadDashboardData() inmediatamente y luego cada REFRESH_INTERVAL_MS.
+ */
+function startDataRefreshTimer() {
+    // Limpia cualquier temporizador anterior para evitar duplicados
+    clearInterval(dataRefreshTimer);
+    
+    // 1. Carga los datos inmediatamente al iniciar
+    loadDashboardData(); 
+    
+    // 2. Establece el intervalo para futuras actualizaciones
+    dataRefreshTimer = setInterval(loadDashboardData, REFRESH_INTERVAL_MS);
+    console.log('Actualización automática de datos iniciada.');
+}
+
+
+
+        // --- LÓGICA DE LOGIN ---
+        function handleLogin(e) {
+            e.preventDefault(); 
+            loginButton.disabled = true; 
+            loginButton.textContent = 'Accediendo...';
+            loginError.textContent = '';
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // --- Bypass de login si los campos están vacíos ---
+            if (username.trim() === '' && password.trim() === '') {
+                console.log('Acceso de Bypass (campos vacíos) concedido.');
+                onLoginSuccess({ 
+                    success: true, 
+                    user: { 
+                        email: 'bypass@app.com', 
+                        nombre: 'Usuario Bypass', 
+                        rol: 'admin' 
+                    } 
+                });
+                return;
+            }
+            // --- Fin del Bypass ---
+
+            google.script.run
+                .withSuccessHandler(onLoginSuccess) 
+                .withFailureHandler(onLoginFailure) 
+                .authenticateUser(username, password);
+        }
+
+        function onLoginSuccess(response) {
+            if (response.success) {
+                currentUser = response.user; 
+                
+                // --- ¡NUEVA LÍNEA! ---
+                // Guardamos el usuario en la sesión del navegador
+                sessionStorage.setItem('erpUser', JSON.stringify(currentUser));
+                // --- FIN LÍNEA NUEVA ---
+
+                welcomeMessage.textContent = 'Bienvenido, ' + currentUser.nombre;
+                
+                if (currentUser.email !== 'bypass@app.com') {
+                  google.script.run.logAudit(currentUser.email, 'LOGIN', 'Inicio de sesión exitoso');
+                }
+                
+                showDashboard(); 
+                startInactivityTimer();
+                
+                startDataRefreshTimer();
+                
+            } else {
+                onLoginFailure(new Error(response.message));
+            }
+            loginButton.disabled = false;
+            loginButton.textContent = 'Acceder';
+        }
+
+        function onLoginFailure(error) {
+            loginError.textContent = error.message; 
+            loginButton.disabled = false;
+            loginButton.textContent = 'Acceder';
+        }
+
+        // --- LÓGICA DE LOGOUT Y SCREENSAVER ---
+        function handleLogout() {
+            if (currentUser && currentUser.email !== 'bypass@app.com') {
+                google.script.run.logAudit(currentUser.email, 'LOGOUT', 'Cierre de sesión manual');
+            }
+            clearTimeout(inactivityTimer); 
+            stopDataRefreshTimer(); 
+            // --- INICIO DE CORRECCIÓN ---
+            // Cambiado de showScreensaver() a showLogin() para cumplir el requisito
+            currentUser = null; // Borrar el usuario actual
+            showLogin();
+            // --- FIN DE CORRECCIÓN ---
+        }
+
+        function lockScreen() {
+            if (currentUser && currentUser.email !== 'bypass@app.com') {
+                google.script.run.logAudit(currentUser.email, 'LOCK', 'Bloqueo por inactividad');
+            }
+            stopDataRefreshTimer(); // <-- AÑADE ESTO
+    showScreensaver();
+        }
+
+        function startInactivityTimer() {
+            clearTimeout(inactivityTimer); 
+            inactivityTimer = setTimeout(lockScreen, INACTIVITY_TIMEOUT_MS); 
+        }
+        
+        function resetInactivityTimer() {
+            if (currentUser && screensaverScreen.classList.contains('hidden')) {
+                startInactivityTimer();
+            }
+        }
+
+        // --- NAVEGACIÓN DEL DASHBOARD ---
+        function handleNavigation(pageId) {
+            console.log('Navegar a:', pageId);
+            
+            // ¡AQUÍ ESTÁ LA MAGIA!
+            // Esto cambia la URL del navegador, añadiendo el parámetro "?page="
+            window.top.location.href = SCRIPT_URL + "?page=" + pageId;
+        }
+
+
+
+
+      
+        function loadDashboardData() {
+          document.getElementById('pedidos-valor').textContent = '...';
+          document.getElementById('obligaciones-valor').textContent = '...';
+          document.getElementById('dolar-valor').textContent = '...';
+          document.getElementById('dolar-cambio').textContent = '';
+
+          google.script.run
+            .withSuccessHandler(updateDashboardCards)
+            .withFailureHandler(showDashboardError)
+            .getDashboardAnalytics();
+        }
+
+        
+        function showDashboardError(error) {
+          console.error('Error al cargar analíticas:', error);
+          document.getElementById('pedidos-valor').textContent = 'Error';
+          document.getElementById('obligaciones-valor').textContent = 'Error';
+          document.getElementById('dolar-valor').textContent = 'Error';
+        }
+
+
+function updateDashboardCards(data) {
+    if (data.error) {
+        showDashboardError(new Error(data.error));
+        return;
+    }
+
+    // 1. Tarjeta de Pedidos (con Notificación)
+    const pedidosVal = parseInt(data.pendingOrders, 10);
+    const pedidosNotifEl = document.getElementById('pedidos-notificacion');
+    document.getElementById('pedidos-valor').textContent = pedidosVal; 
+    
+    if (pedidosVal > 0) {
+        document.getElementById('pedidos-notificacion-valor').textContent = pedidosVal;
+        pedidosNotifEl.classList.remove('hidden');
+    } else {
+        pedidosNotifEl.classList.add('hidden');
+    }
+
+    // 2. Tarjeta de Obligaciones (con Notificación)
+    const obligVal = parseInt(data.obligations, 10);
+    const obligNotifEl = document.getElementById('obligaciones-notificacion');
+    document.getElementById('obligaciones-valor').textContent = obligVal; 
+    
+    if (obligVal > 0) {
+        document.getElementById('obligaciones-notificacion-valor').textContent = obligVal;
+        obligNotifEl.classList.remove('hidden');
+    } else {
+        obligNotifEl.classList.add('hidden');
+    }
+
+    // 3. Tarjeta de Dólar (sin flip)
+    document.getElementById('dolar-valor').textContent = data.dollar.rate;
+    const cambioEl = document.getElementById('dolar-cambio');
+    if (data.dollar.rate === "Error") {
+        cambioEl.textContent = "Revisa permisos"; 
+        cambioEl.className = 'text-sm font-medium text-red-500';
+    } else if (data.dollar.change > 0) {
+        cambioEl.textContent = `(▲ ${data.dollar.change})`;
+        cambioEl.className = 'text-sm font-medium text-red-500'; 
+    } else if (data.dollar.change < 0) {
+        cambioEl.textContent = `(▼ ${data.dollar.change})`;
+        cambioEl.className = 'text-sm font-medium text-green-500';
+    } else {
+        cambioEl.textContent = `(= ${data.dollar.change})`;
+        cambioEl.className = 'text-sm font-medium text-gray-500';
+    }
+    
+    // 4. Tarjeta de Ganancia (controla icono y blur)
+    const gananciaVal = parseFloat(data.balance.ganancia);
+    updateTextCounter('ganancia-valor', gananciaVal); 
+    
+    const gananciaIconoWrapper = document.getElementById('ganancia-icono-wrapper');
+    const gananciaIcono = document.getElementById('ganancia-icono');
+    const gananciaBlurDiv = document.getElementById('ganancia-blur-div');
+
+    gananciaIconoWrapper.classList.remove('bg-red-100', 'text-red-600', 'bg-green-100', 'text-green-600', 'bg-purple-100', 'text-purple-600');
+    gananciaBlurDiv.classList.remove('bg-red-500/50', 'bg-green-500/50', 'bg-purple-500/50');
+
+    if (gananciaVal < 0) {
+        gananciaIconoWrapper.classList.add('bg-red-100', 'text-red-600');
+        gananciaBlurDiv.classList.add('bg-red-500/50');
+        gananciaIcono.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path>';
+   } else {
+        gananciaIconoWrapper.classList.add('bg-green-100', 'text-green-600');
+        gananciaBlurDiv.classList.add('bg-green-500/50');
+        gananciaIcono.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>';
+    }
+
+    // 5. Tarjetas del Footer (¡LÓGICA ACTUALIZADA CON TUS REQUISITOS!)
+    
+    // Tarjeta 1: Insumos
+    updateTextCounter('insumos-valor-principal', parseFloat(data.footerData.valorInsumos));
+    document.getElementById('insumos-valor-secundario').textContent = 'Maquinaria: ' + formatLargeNumber(data.footerData.valorMaquinaria);
+
+    // Tarjeta 2: Productos
+    updateTextCounter('productos-valor-principal', parseFloat(data.footerData.valorProductosVenta));
+    document.getElementById('productos-valor-secundario').textContent = 'Costo: ' + formatLargeNumber(data.footerData.valorProductosCosto);
+
+    // Tarjeta 3: Cash
+    updateTextCounter('cash-valor-principal', parseFloat(data.footerData.cashTotal));
+    document.getElementById('cash-valor-secundario').textContent = 'Efectivo: ' + formatLargeNumber(data.footerData.cashEfectivo);
+
+    // Tarjeta 4: Pasivos (Total por Pagar)
+    const valDebeTotal = parseFloat(data.footerData.totalDebe);
+    const debeEl = document.getElementById('debe-valor-principal');
+    updateTextCounter('debe-valor-principal', valDebeTotal);
+    document.getElementById('debe-valor-secundario').textContent = 'Pagado: ' + formatLargeNumber(data.footerData.totalPagado);
+    
+    // Lógica de color INVERSA para "Total por Pagar"
+    debeEl.style.color = (valDebeTotal > 0) ? '#ef4444' : '#22c55e'; // Rojo si debes, Verde si no
+}
+
+
+function formatLargeNumber(value) {
+  const numberValue = parseFloat(value) || 0;
+  
+  // Formato estándar para números menores a 1 millón (y mayores a -1 millón)
+  const formatNormal = (val) => '$ ' + new Intl.NumberFormat('es-CO', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(val);
+
+  if (numberValue >= 1000000) {
+    // Si es 1 millón o más, dividir y mostrar como "M"
+    const millions = numberValue / 1000000;
+    const formatted = new Intl.NumberFormat('es-CO', {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 2,
+    }).format(millions);
+    return `$ ${formatted} M`;
+  
+  } else if (numberValue <= -1000000) {
+    // Maneja millones negativos
+    const millions = numberValue / 1000000;
+    const formatted = new Intl.NumberFormat('es-CO', {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 2,
+    }).format(millions);
+    return `${formatted} M`; // El signo ya viene
+  
+  } else {
+    // Si es menor a 1 millón, mostrar formato normal
+    return formatNormal(numberValue);
+  }
+}
+
+
+function updateTextCounter(elementId, value) {
+    const el = document.getElementById(elementId);
+    if (el) {
+        el.textContent = formatLargeNumber(value); // <-- ¡CAMBIO CLAVE!
+        
+        // Aplica las clases de color tick-red o tick-green
+        if (value < 0) {
+            el.classList.add('tick-red');
+            el.classList.remove('tick-green');
+        } else {
+            el.classList.add('tick-green');
+            el.classList.remove('tick-red');
+        }
+    }
+}
+
+
+document.addEventListener('DOMContentLoaded', () => {
+            populateImages(); 
+            
+            // ¡CORREGIDO! Quitamos la inicialización manual de aquí.
+            // La librería los inicializará sola usando 'data-did-init'.
+            
+            loginForm.addEventListener('submit', handleLogin);
+            logoutButton.addEventListener('click', handleLogout);
+            screensaverScreen.addEventListener('click', unlockScreen);
+
+            window.addEventListener('mousemove', resetInactivityTimer);
+            window.addEventListener('keydown', resetInactivityTimer);
+            window.addEventListener('click', resetInactivityTimer);
+            window.addEventListener('scroll', resetInactivityTimer);
+            
+            // --- ¡LÓGICA DE INICIO REEMPLAZADA! ---
+            const storedUser = sessionStorage.getItem('erpUser');
+            if (storedUser) {
+                // Si encontramos un usuario, lo cargamos y mostramos el dashboard
+                currentUser = JSON.parse(storedUser);
+                welcomeMessage.textContent = 'Bienvenido, ' + currentUser.nombre;
+                showDashboard();
+                startInactivityTimer();
+                startDataRefreshTimer(); // Esto carga las analíticas
+            } else {
+                // Si no hay sesión, mostramos el login
+                showLogin();
+            }
+            // --- FIN DEL REEMPLAZO ---
+        });
+        
+    </script>
+
+</body>
+</html>

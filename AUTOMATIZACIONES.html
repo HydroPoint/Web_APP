@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Automatizaciones - CMSI</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        
+        .form-field {
+            width: 100%;
+            margin-top: 0.25rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            background-color: #f3f4f6; /* bg-gray-100 */
+            border: 1px solid transparent;
+        }
+        .form-field:focus {
+            border-color: #3b82f6; /* border-blue-500 */
+            background-color: #ffffff;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        .form-field:disabled {
+            background-color: #e5e7eb;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .trigger-action-box {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border-left-color: #00008B;
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-blue-600">
+
+    <div class="w-full max-w-7xl mx-auto p-6">
+        
+        <div class="w-full flex justify-between items-center pt-8 pb-10">
+            <img data-src-key="logo" alt="Logo" 
+                 class="h-10 w-auto cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-95 hover:drop-shadow-lg" 
+                 onclick="handleNavigation('INDEX')">
+            
+            <h1 id="header-title" class="text-3xl font-bold text-white hidden md:block">
+                <i class="fa-solid fa-gears me-2"></i> Gestión de Automatizaciones
+            </h1>
+            
+            <button
+              id="btn-back-to-clients" 
+              onclick="handleNavigation('CLIENTES')"
+              type="button"
+              class="bg-white text-center w-48 rounded-2xl h-14 relative text-blue-700 text-xl font-semibold border-4 border-white group"
+            >
+              <div class="bg-blue-600 rounded-xl h-12 w-1/4 grid place-items-center absolute left-0 top-0 group-hover:w-full z-10 duration-500">
+                <svg class="w-6 h-6" viewBox="0 0 1024 1024" xmlns="http://www.w3.0/2000/svg">
+                  <path fill="#FFFFFF" d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z"></path>
+                  <path fill="#FFFFFF" d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z"></path>
+                </svg>
+              </div>
+              <p class="translate-x-4 transition-transform duration-500 group-hover:translate-x-0">Volver</p> 
+            </button>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-md p-6 sticky top-6">
+                    
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">
+                        <i class="fa-solid fa-magic-sparkles me-2 text-blue-600"></i>
+                        Crear / Editar Regla
+                    </h2>
+
+                    <form id="automation-form">
+                        <div class="space-y-4">
+                            
+                            <div>
+                                <label for="automation-nombre" class="block text-sm font-medium text-gray-700">Nombre de la Regla</label>
+                                <input type="text" id="automation-nombre" name="automation-nombre" class="form-field" placeholder="Ej: Bienvenida a VIPs">
+                            </div>
+
+                            <div>
+                                <label for="automation-status" class="block text-sm font-medium text-gray-700">Estado</label>
+                                <select id="automation-status" name="automation-status" class="form-field">
+                                    <option value="activa">Activa</option>
+                                    <option value="inactiva">Inactiva</option>
+                                </select>
+                            </div>
+
+                            <div class="trigger-action-box">
+                                <h3 class="text-lg font-semibold text-gray-700 mb-3">
+                                    <i class="fa-solid fa-bolt-lightning me-1 text-yellow-500"></i>
+                                    SI... (Trigger)
+                                </h3>
+                                
+                                <label for="trigger-type" class="block text-sm font-medium text-gray-700">Cuando...</label>
+                                <select id="trigger-type" name="trigger-type" class="form-field">
+                                    <option value="tag_added">Se añade un Tag al cliente</option>
+                                    <option value="status_changed">El estado del cliente cambia a</option>
+                                    <option value="purchase_made">El cliente realiza una compra</option>
+                                    <option value="inactive_days">Cliente inactivo por X días</option>
+                                </select>
+
+                                <label for="trigger-value" class="block text-sm font-medium text-gray-700 mt-3">Valor</label>
+                                <input type="text" id="trigger-value" name="trigger-value" class="form-field" placeholder="Ej: VIP, Dormido, 30...">
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Escribe el Tag, Estado o N° de Días.
+                                </p>
+                            </div>
+
+                            <div class="trigger-action-box">
+                                <h3 class="text-lg font-semibold text-gray-700 mb-3">
+                                    <i class="fa-solid fa-rocket me-1 text-green-500"></i>
+                                    ENTONCES... (Acción)
+                                </h3>
+                                
+                                <label for="action-type" class="block text-sm font-medium text-gray-700">Ejecutar esta acción:</label>
+                                <select id="action-type" name="action-type" class="form-field">
+                                    <option value="send_template">Enviar Plantilla</option>
+                                    <option value="add_tag">Agregar Tag</option>
+                                    <option value="change_status">Cambiar Estado</option>
+                                </select>
+
+                                <label for="action-value" class="block text-sm font-medium text-gray-700 mt-3">Valor de la Acción</label>
+                                <input type="text" id="action-value" name="action-value" class="form-field" placeholder="ID de Plantilla, 'NuevoTag', 'Activo'">
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Escribe el ID de la plantilla, el Tag nuevo, o el Estado nuevo.
+                                </p>
+                            </div>
+                            
+                            <p id="form-message" class="text-sm h-5"></p>
+
+                            <div class="flex gap-4">
+                                <button type="button" id="form-cancel-button"
+                                        class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-4 rounded-lg transition-colors duration-300">
+                                    Limpiar
+                                </button>
+                                <button type="submit" id="form-submit-button"
+                                        class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center">
+                                    <span id="submit-text">Guardar Regla</span>
+                                    <div id="submit-spinner" class="spinner hidden"></div>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">
+                        <i class="fa-solid fa-list-check me-2 text-blue-600"></i>
+                        Reglas Activas
+                    </h2>
+                    
+                    <div id="automations-table-container" class="overflow-y-auto overflow-x-auto h-[70vh] shadow-inner bg-gray-50 rounded-lg">
+                        <table class="w-full text-sm text-left text-gray-600">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0 z-10">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3"><i class="fa-solid fa-file-lines me-2"></i>Nombre de la Regla</th>
+                                    <th scope="col" class="px-6 py-3"><i class="fa-solid fa-bolt-lightning me-2"></i>Trigger (SI...)</th>
+                                    <th scope="col" class="px-6 py-3"><i class="fa-solid fa-rocket me-2"></i>Acción (ENTONCES...)</th>
+                                    <th scope="col" class="px-6 py-3"><i class="fa-solid fa-toggle-on me-2"></i>Estado</th>
+                                    <th scope="col" class="px-6 py-3 text-center"><i class="fa-solid fa-bolt me-2"></i>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="automations-table-body" class="divide-y">
+                                
+                                <tr id="loading-row" class="bg-white border-b">
+                                    <td colspan="5" class="px-6 py-4 text-center text-gray-400">
+                                        <div class="spinner mx-auto"></div>
+                                        Cargando reglas...
+                                    </td>
+                                </tr>
+
+                                <tr class="bg-white border-b hover:bg-gray-50">
+                                    <td class="px-6 py-4 font-medium text-gray-900">Bienvenida a VIPs</td>
+                                    <td class="px-6 py-4">Tag añadido: "VIP"</td>
+                                    <td class="px-6 py-4">Enviar Plantilla: "PLT-001"</td>
+                                    <td class="px-6 py-4">
+                                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Activa</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button class="text-blue-600 hover:text-blue-800 p-1" title="Editar"><i class="fa-solid fa-pencil fa-fw"></i></button>
+                                        <button class="text-red-500 hover:text-red-700 p-1" title="Eliminar"><i class="fa-solid fa-trash fa-fw"></i></button>
+                                    </td>
+                                </tr>
+
+                                <tr class="bg-white border-b hover:bg-gray-50">
+                                    <td class="px-6 py-4 font-medium text-gray-900">Reactivar Cliente Dormido</td>
+                                    <td class="px-6 py-4">Estado cambia a: "Dormido"</td>
+                                    <td class="px-6 py-4">Agregar Tag: "Necesita MKT"</td>
+                                    <td class="px-6 py-4">
+                                        <span class="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Inactiva</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button class="text-blue-600 hover:text-blue-800 p-1" title="Editar"><i class="fa-solid fa-pencil fa-fw"></i></button>
+                                        <button class="text-red-500 hover:text-red-700 p-1" title="Eliminar"><i class="fa-solid fa-trash fa-fw"></i></button>
+                                    </td>
+                                </tr>
+                                
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+<script>
+    // ==================================================================
+    // CONFIGURACIÓN BÁSICA
+    // ==================================================================
+    const SCRIPT_URL = '<?= url ?>'; // Esto se llenará por el doGet
+
+    const imageConfig = {
+        logo: "https://i.postimg.cc/BQ2Sp0T4/Logotransparente.png"
+    };
+
+    function populateImages() {
+        const images = document.querySelectorAll('[data-src-key]');
+        images.forEach(img => {
+            const key = img.getAttribute('data-src-key');
+            if (imageConfig[key]) {
+                img.src = imageConfig[key];
+            }
+        });
+    }
+    
+    function handleNavigation(pageId) {
+        console.log('Navegar a:', pageId);
+        window.top.location.href = SCRIPT_URL + "?page=" + pageId;
+    }
+
+    // ==================================================================
+    // LÓGICA DE ESTA PÁGINA (AUTOMATIZACIONES)
+    // ==================================================================
+
+    // --- REFERENCIAS AL DOM ---
+    const automationForm = document.getElementById('automation-form');
+    const formSubmitButton = document.getElementById('form-submit-button');
+    const submitText = document.getElementById('submit-text');
+    const submitSpinner = document.getElementById('submit-spinner');
+    const formMessage = document.getElementById('form-message');
+    const cancelButton = document.getElementById('form-cancel-button');
+    const automationsTableBody = document.getElementById('automations-table-body');
+    const loadingRow = document.getElementById('loading-row');
+
+    /**
+     * Carga inicial de las reglas
+     */
+    function loadAutomations() {
+        setLoading(true);
+        loadingRow.classList.remove('hidden');
+        
+        // Simular carga (borra esto cuando conectes el .gs)
+        setTimeout(() => {
+            setLoading(false);
+            loadingRow.classList.add('hidden');
+            // Las filas de ejemplo ya están en el HTML
+            
+            // Aquí llamarías a:
+            // google.script.run
+            //     .withSuccessHandler(onLoadAutomationsSuccess)
+            //     .withFailureHandler(onLoadAutomationsFailure)
+            //     .getAutomations(); // <-- Nueva función que deberás crear en .gs
+            
+        }, 1500);
+    }
+    
+    // function onLoadAutomationsSuccess(rules) {
+    //     setLoading(false);
+    //     loadingRow.classList.add('hidden');
+    //     automationsTableBody.innerHTML = '';
+        
+    //     if (!rules || rules.length === 0) {
+    //         automationsTableBody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No hay reglas creadas. ¡Crea la primera!</td></tr>';
+    //         return;
+    //     }
+        
+    //     rules.forEach(r => {
+    //         const row = document.createElement('tr');
+    //         row.className = 'bg-white border-b hover:bg-gray-50';
+    //         const statusBadge = r.Estado === 'activa' ?
+    //             '<span class="bg-green-100 text-green-800 ...">Activa</span>' :
+    //             '<span class="bg-gray-100 text-gray-800 ...">Inactiva</span>';
+            
+    //         row.innerHTML = `
+    //             <td class="px-6 py-4 font-medium text-gray-900">${r.Nombre}</td>
+    //             <td class="px-6 py-4">${r.TriggerTipo}: "${r.TriggerValor}"</td>
+    //             <td class="px-6 py-4">${r.AccionTipo}: "${r.AccionValor}"</td>
+    //             <td class="px-6 py-4">${statusBadge}</td>
+    //             <td class="px-6 py-4 text-center">
+    //                 <button onclick="editRule('${r.Rule_ID}')" class="text-blue-600 hover:text-blue-800 p-1"><i class="fa-solid fa-pencil fa-fw"></i></button>
+    //                 <button onclick="deleteRule('${r.Rule_ID}')" class="text-red-500 hover:text-red-700 p-1"><i class="fa-solid fa-trash fa-fw"></i></button>
+    //             </td>
+    //         `;
+    //         automationsTableBody.appendChild(row);
+    //     });
+    // }
+
+    /**
+     * Maneja el envío del formulario
+     */
+    function handleFormSubmit(e) {
+        e.preventDefault();
+        setLoading(true);
+        
+        const payload = {
+            Nombre: document.getElementById('automation-nombre').value,
+            Estado: document.getElementById('automation-status').value,
+            TriggerTipo: document.getElementById('trigger-type').value,
+            TriggerValor: document.getElementById('trigger-value').value,
+            AccionTipo: document.getElementById('action-type').value,
+            AccionValor: document.getElementById('action-value').value
+        };
+
+        if (!payload.Nombre || !payload.TriggerValor || !payload.AccionValor) {
+            showMessage('form-message', 'Nombre y ambos Valores son obligatorios.', 'red');
+            setLoading(false);
+            return;
+        }
+
+        // Aquí llamarías a:
+        // google.script.run
+        //     .withSuccessHandler(onCreateSuccess)
+        //     .withFailureHandler(onCreateFailure)
+        //     .createAutomationRule(payload); // <-- Nueva función en .gs
+
+        // Simulación de éxito
+        setTimeout(() => {
+            showMessage('form-message', 'Regla guardada (simulación).', 'green');
+            setLoading(false);
+            resetForm();
+            loadAutomations(); // Recargar la lista
+        }, 1000);
+    }
+    
+    function resetForm() {
+        automationForm.reset();
+        formMessage.textContent = '';
+    }
+
+    // --- FUNCIONES UTILITARIAS ---
+
+    function setLoading(isLoadingState) {
+        formSubmitButton.disabled = isLoadingState;
+        if (isLoadingState) {
+            submitText.classList.add('hidden');
+            submitSpinner.classList.remove('hidden');
+        } else {
+            submitText.classList.remove('hidden');
+            submitSpinner.classList.add('hidden');
+        }
+    }
+
+    function showMessage(elementId, message, color) {
+        const el = document.getElementById(elementId);
+        el.textContent = message;
+        el.className = `text-sm h-5 ${color === 'red' ? 'text-red-500' : 'text-green-600'}`;
+        
+        if (color === 'green') {
+            setTimeout(() => { el.textContent = ''; }, 3000);
+        }
+    }
+
+    // --- INICIALIZACIÓN ---
+    window.onload = function() {
+        populateImages();
+        
+        if (automationForm) {
+            automationForm.addEventListener('submit', handleFormSubmit);
+        }
+        if (cancelButton) {
+            cancelButton.addEventListener('click', resetForm);
+        }
+        
+        loadAutomations(); // Cargar la lista al iniciar
+    };
+</script>
+
+</body>
+</html>

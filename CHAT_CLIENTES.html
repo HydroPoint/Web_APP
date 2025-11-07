@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM: Gestión de Leads</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <style>
+    html { height: 100%; } /* <-- AÑADIDO */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Color de fondo general */
+            height: 100%; /* <-- AÑADIDO */
+            overflow: hidden; /* <-- AÑADIDO (Quita scroll principal) */
+        }
+        
+        /* --- Estilos para las Pestañas --- */
+        .tab-button {
+            transition: all 0.2s ease;
+            border-bottom: 4px solid transparent;
+            padding: 1rem 0.5rem;
+            font-weight: 600;
+            color: #6b7280; /* text-gray-500 */
+        }
+        .tab-button:hover {
+            color: #111827; /* text-gray-900 */
+        }
+        .tab-button.active {
+            border-color: #3b82f6; /* border-blue-500 */
+            color: #3b82f6;
+        }
+
+        /* --- Estilos del Pipeline (Kanban) --- */
+        
+        /* Contenedor de la columna */
+        .kanban-column {
+            background-color: #f3f4f6; /* bg-gray-100 */
+            border-radius: 0.75rem; /* rounded-xl */
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        /* Cuerpo de la columna (donde se sueltan las tarjetas) */
+        .kanban-column-body {
+            flex-grow: 1;
+            padding: 0.5rem;
+            overflow-y: auto;
+            min-height: 200px;
+            transition: background-color 0.2s ease;
+        }
+
+        /* Estado visual cuando se arrastra sobre una columna */
+        .kanban-column-body.drag-over {
+            background-color: #e0e7ff; /* bg-indigo-100 */
+        }
+
+        /* Tarjeta de Lead */
+        .lead-card {
+            background-color: #ffffff;
+            border-radius: 0.5rem; /* rounded-lg */
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            cursor: grab;
+            transition: opacity 0.2s ease;
+            border-left: 4px solid #9ca3af; /* Borde de color por defecto */
+        }
+        .lead-card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Estilo para la tarjeta que se está arrastrando */
+        .lead-card.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+            transform: scale(1.05);
+        }
+
+        /* Colores por tipo de lead (como en tu HTML) */
+        .lead-card[data-source="chats"] { border-left-color: #25d366; } /* WhatsApp */
+        .lead-card[data-source="instagram"] { border-left-color: #e4405f; } /* Instagram */
+
+        /* --- Estilos del Dashboard (Widgets) --- */
+        .widget {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="bg-blue-600 h-full flex flex-col">
+
+    <div class="w-full max-w-full mx-auto p-6 flex-grow flex flex-col overflow-hidden">
+        
+       <div class="w-full flex justify-between items-center pt-8 pb-10 flex-shrink-0">
+            <img data-src-key="logo" alt="Logo" 
+                 class="h-10 w-auto cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-95 hover:drop-shadow-lg" 
+                 onclick="handleNavigation('INDEX')">
+            
+            <h1 id="header-title" class="text-3xl font-bold text-white hidden md:block">
+                <i class="fa-solid fa-comments me-2"></i> CRM: Leads y Chats
+            </h1>
+            
+            <button
+              id="btn-back-to-clients" 
+              onclick="handleNavigation('CLIENTES')"
+              type="button"
+              class="bg-white text-center w-48 rounded-2xl h-14 relative text-blue-700 text-xl font-semibold border-4 border-white group"
+            >
+              <div class="bg-blue-600 rounded-xl h-12 w-1/4 grid place-items-center absolute left-0 top-0 group-hover:w-full z-10 duration-500">
+                <svg class="w-6 h-6" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                  <path fill="#FFFFFF" d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z"></path>
+                  <path fill="#FFFFFF" d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z"></path>
+                </svg>
+              </div>
+              <p class="translate-x-4 transition-transform duration-500 group-hover:translate-x-0">Volver</p> 
+            </button>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md mb-6 flex-shrink-0">
+            <div class="border-b border-gray-200">
+                <nav class="flex gap-6 px-6" aria-label="Tabs">
+                    <button onclick="showTab('pipeline')" id="tab-btn-pipeline" class="tab-button active">
+                        <i class="fa-solid fa-grip-vertical me-2"></i> Pipeline (Kanban)
+                    </button>
+                    <button onclick="showTab('dashboard')" id="tab-btn-dashboard" class="tab-button">
+                        <i class="fa-solid fa-chart-pie me-2"></i> Dashboard (Estadísticas)
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <div id="panel-pipeline" class="tab-panel active flex-grow flex flex-col overflow-hidden">
+            
+            <div class="bg-white rounded-lg shadow-md p-4 mb-6 flex-shrink-0">
+                <div class="flex flex-wrap justify-around items-center">
+                    <div class="text-center px-4 py-2">
+                        <div class="text-sm text-gray-500">Tareas para hoy</div>
+                        <div class="text-2xl font-bold text-red-600">0</div>
+                    </div>
+                    <div class="text-center px-4 py-2">
+                        <div class="text-sm text-gray-500">Sin tareas</div>
+                        <div class="text-2xl font-bold text-gray-800">28</div>
+                    </div>
+                    <div class="text-center px-4 py-2">
+                        <div class="text-sm text-gray-500">Caducadas</div>
+                        <div class="text-2xl font-bold text-gray-800">0</div>
+                    </div>
+                    <div class="text-center px-4 py-2">
+                        <div class="text-sm text-gray-500">Nuevos Hoy / Ayer</div>
+                        <div class="text-2xl font-bold text-gray-800">0 / 0</div>
+                    </div>
+                    <div class="text-center px-4 py-2 border-l border-gray-200 ml-4 pl-6">
+                        <div class="text-sm text-gray-500">Pronóstico de Ventas</div>
+                        <div class="text-xl font-bold text-green-600">Sin datos</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="kanban-board-container" 
+                 class="flex-grow grid grid-cols-6 gap-4 overflow-hidden pb-4">
+                 <div class="kanban-column">
+                    <div class="p-4 border-b border-gray-300">
+                        <h3 class="text-lg font-bold text-gray-800">Leads Entrantes</h3>
+                        <p class="text-sm text-gray-500">Solicitudes: 62</p>
+                    </div>
+                    <div class="kanban-column-body" id="col-leads-entrantes">
+                        
+                        <div class="lead-card" draggable="true" id="lead-11496596" data-source="chats">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-medium text-gray-600">de: 573136831446</span>
+                                <span class="text-xs text-gray-400">17/03/2025 11:06</span>
+                            </div>
+                            <div class="flex items-center gap-3 mb-2">
+                                <i class="fa-brands fa-whatsapp text-green-500 text-2xl"></i>
+                                <a href="#" onclick="openChat('lead-11496596')" class="font-bold text-gray-900 truncate hover:text-blue-600 hover:underline">... (Nombre Cliente)</a>
+                            </div>
+                            <p class="text-sm text-gray-600 truncate mb-3">De papers, 7, más 4 de conos</p>
+                            <div class="flex justify-end gap-2">
+                                <button class="text-gray-500 hover:text-red-600 p-1" title="Rechazar"><i class="fa-solid fa-trash"></i></button>
+                                <button class="bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-3 rounded-full">Aceptar</button>
+                            </div>
+                        </div>
+
+                        <div class="lead-card" draggable="true" id="lead-11489860" data-source="instagram">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-medium text-gray-600">de: Vieja Escuela Shop</span>
+                                <span class="text-xs text-gray-400">17/03/2025 8:22</span>
+                            </div>
+                            <div class="flex items-center gap-3 mb-2">
+                                <i class="fa-brands fa-instagram text-pink-600 text-2xl"></i>
+                                <a href="#" onclick="openChat('lead-11489860')" class="font-bold text-gray-900 truncate hover:text-blue-600 hover:underline">Mocoso Creativo</a>
+                            </div>
+                            <p class="text-sm text-gray-600 truncate mb-3">Buenos días</p>
+                            <div class="flex justify-end gap-2">
+                                <button class="text-gray-500 hover:text-red-600 p-1" title="Rechazar"><i class="fa-solid fa-trash"></i></button>
+                                <button class="bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-3 rounded-full">Aceptar</button>
+                            </div>
+                        </div>
+
+                        </div>
+                </div>
+                
+                <div class="kanban-column">
+                    <div class="p-4 border-b border-gray-300" style="border-left: 4px solid #98cbff;">
+                        <h3 class="text-lg font-bold text-gray-800">Contacto Inicial</h3>
+                        <p class="text-sm text-gray-500">6 Clientes: $0</p>
+                    </div>
+                    <div class="kanban-column-body" id="col-contacto-inicial">
+                        <div class="lead-card" draggable="true" id="lead-7477892">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-medium text-gray-600">Lead #7477892</span>
+                                <span class="text-xs text-gray-400">21/12/2024</span>
+                            </div>
+                            <a href="#" onclick="openChat('lead-7477892')" class="font-bold text-gray-900 truncate mb-2 hover:text-blue-600 hover:underline">Juan Sierra</a>
+                            <p class="text-sm text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full text-center">
+                                <i class="fa-solid fa-clock me-1"></i> No hay tareas
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kanban-column">
+                    <div class="p-4 border-b border-gray-300" style="border-left: 4px solid #fffd7f;">
+                        <h3 class="text-lg font-bold text-gray-800">Nueva consulta</h3>
+                        <p class="text-sm text-gray-500">7 Clientes: $0</p>
+                    </div>
+                    <div class="kanban-column-body" id="col-nueva-consulta">
+                        </div>
+                </div>
+
+                <div class="kanban-column">
+                    <div class="p-4 border-b border-gray-300" style="border-left: 4px solid #ffce5a;">
+                        <h3 class="text-lg font-bold text-gray-800">Factura enviada</h3>
+                        <p class="text-sm text-gray-500">0 Clientes: $0</p>
+                    </div>
+                    <div class="kanban-column-body" id="col-factura-enviada">
+                    </div>
+                </div>
+
+                <div class="kanban-column">
+                    <div class="p-4 border-b border-gray-300" style="border-left: 4px solid #c1e0ff;">
+                        <h3 class="text-lg font-bold text-gray-800">Entregado</h3>
+                        <p class="text-sm text-gray-500">3 Clientes: $0</p>
+                    </div>
+                    <div class="kanban-column-body" id="col-entregado">
+                    </div>
+                </div>
+
+                <div class="kanban-column">
+                    <div class="p-4 border-b border-green-300 bg-green-100">
+                        <h3 class="text-lg font-bold text-green-800">Ganado</h3>
+                        <p class="text-sm text-green-600">1 Cliente: $100.000</p>
+                    </div>
+                    <div class="kanban-column-body" id="col-ganado" style="background-color: #f0fdf4;">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="panel-dashboard" class="tab-panel hidden flex-grow overflow-y-auto">
+            
+            <div class="mb-6 flex flex-wrap gap-2">
+                <button class="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 rounded-lg shadow-sm">Hoy</button>
+                <button class="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 rounded-lg shadow-sm">Ayer</button>
+                <button class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow">Semana</button>
+                <button class="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 rounded-lg shadow-sm">Mes</button>
+                <input type="text" placeholder="Fechas..." class="bg-white text-gray-800 font-semibold py-2 px-4 rounded-lg shadow-sm w-48">
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                <div class="widget md:col-span-2 lg:col-span-2">
+                    <h4 class="text-lg font-bold text-gray-800 mb-4">Mensajes entrantes</h4>
+                    <div class="flex items-center mb-4">
+                        <div class="text-5xl font-bold text-green-600">0</div>
+                        <div class="ml-3 text-sm text-gray-500">por semana</div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600"><i class="fa-brands fa-whatsapp text-green-500 me-2"></i> WhatsApp</span>
+                            <span class="font-bold">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600"><i class="fa-brands fa-instagram text-pink-600 me-2"></i> Instagram</span>
+                            <span class="font-bold">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600"><i class="fa-solid fa-comments text-blue-500 me-2"></i> Chats</span>
+                            <span class="font-bold">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="widget">
+                    <h4 class="text-lg font-bold text-gray-800 mb-4">Diálogos vigentes</h4>
+                    <div class="text-6xl font-bold text-blue-600">17</div>
+                    <p class="text-sm text-gray-500 mt-2">por semana</p>
+                </div>
+                
+                <div class="widget">
+                    <h4 class="text-lg font-bold text-gray-800 mb-4">Diálogos sin réplica</h4>
+                    <div class="text-6xl font-bold text-red-600">0</div>
+                    <p class="text-sm text-gray-500 mt-2">por semana</p>
+                </div>
+
+                <div class="widget">
+                    <h4 class="text-lg font-bold text-gray-800 mb-4">Leads ganados</h4>
+                    <div class="text-6xl font-bold text-green-600">1</div>
+                    <p class="text-sm text-gray-500 mt-2">por semana</p>
+                </div>
+
+                <div class="widget">
+                    <h4 class="text-lg font-bold text-gray-800 mb-4">Leads activos</h4>
+                    <div class="text-6xl font-bold text-gray-800">90</div>
+                    <p class="text-sm text-gray-500 mt-2">Total</p>
+                </div>
+
+                <div class="widget">
+                    <h4 class="text-lg font-bold text-gray-800 mb-4">Leads perdidos</h4>
+                    <div class="text-6xl font-bold text-gray-800">1</div>
+                    <p class="text-sm text-gray-500 mt-2">por semana</p>
+                </div>
+
+                <div class="widget">
+                    <h4 class="text-lg font-bold text-gray-800 mb-4">Leads sin tareas</h4>
+                    <div class="text-6xl font-bold text-yellow-600">28</div>
+                    <p class="text-sm text-gray-500 mt-2">Total</p>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+    
+<script>
+    // ==================================================================
+    // CONFIGURACIÓN BÁSICA
+    // ==================================================================
+    const SCRIPT_URL = '<?= url ?>'; // Esto se llenará por el doGet
+
+    const imageConfig = {
+        logo: "https://i.postimg.cc/BQ2Sp0T4/Logotransparente.png"
+    };
+
+    function populateImages() {
+        const images = document.querySelectorAll('[data-src-key]');
+        images.forEach(img => {
+            const key = img.getAttribute('data-src-key');
+            if (imageConfig[key]) {
+                img.src = imageConfig[key];
+            }
+        });
+    }
+    
+    function handleNavigation(pageId) {
+        console.log('Navegar a:', pageId);
+        window.top.location.href = SCRIPT_URL + "?page=" + pageId;
+    }
+
+    // ==================================================================
+    // LÓGICA DE PESTAÑAS (TABS)
+    // ==================================================================
+    const tabButtons = {
+        pipeline: document.getElementById('tab-btn-pipeline'),
+        dashboard: document.getElementById('tab-btn-dashboard')
+    };
+    const tabPanels = {
+        pipeline: document.getElementById('panel-pipeline'),
+        dashboard: document.getElementById('panel-dashboard')
+    };
+
+    function showTab(tabName) {
+        // Ocultar todos los paneles
+        Object.values(tabPanels).forEach(panel => panel.classList.add('hidden'));
+        // Quitar 'active' de todos los botones
+        Object.values(tabButtons).forEach(button => button.classList.remove('active'));
+        
+        // Mostrar el panel y botón seleccionados
+        tabPanels[tabName].classList.remove('hidden');
+        tabButtons[tabName].classList.add('active');
+    }
+
+    // ==================================================================
+    // LÓGICA DE DRAG & DROP (KANBAN)
+    // ==================================================================
+    let draggedElement = null;
+
+    function setupDragAndDrop() {
+        const leadCards = document.querySelectorAll('.lead-card');
+        const columns = document.querySelectorAll('.kanban-column-body');
+
+        // 1. Para cada TARJETA
+        leadCards.forEach(card => {
+            card.addEventListener('dragstart', onDragStart);
+            card.addEventListener('dragend', onDragEnd);
+        });
+
+        // 2. Para cada COLUMNA
+        columns.forEach(column => {
+            column.addEventListener('dragover', onDragOver);
+            column.addEventListener('dragleave', onDragLeave);
+            column.addEventListener('drop', onDrop);
+        });
+    }
+
+    // ... (debajo de la función handleNavigation) ...
+
+    /**
+     * Abre la vista de detalle/chat para un lead específico
+     */
+  function openChat(leadId) {
+    event.preventDefault(); 
+    // Esta es la línea clave:
+    handleNavigation('MESSENGER');  // --- handleNavigation('MESSENGER?lead_id=' + leadId); ---
+}
+    
+    // --- Funciones de Arrastrar Tarjeta ---
+    function onDragStart(event) {
+        draggedElement = event.target;
+        event.dataTransfer.setData('text/plain', event.target.id);
+        setTimeout(() => {
+            event.target.classList.add('dragging'); // Ocultar o estilizar la original
+        }, 0);
+    }
+    
+    function onDragEnd(event) {
+        event.target.classList.remove('dragging');
+        draggedElement = null;
+    }
+
+    // --- Funciones de Soltar en Columna ---
+    function onDragOver(event) {
+        event.preventDefault(); // ¡MUY IMPORTANTE! Permite que se pueda "soltar"
+        const columnBody = event.target.closest('.kanban-column-body');
+        if (columnBody) {
+            columnBody.classList.add('drag-over');
+        }
+    }
+    
+    function onDragLeave(event) {
+        const columnBody = event.target.closest('.kanban-column-body');
+        if (columnBody) {
+            columnBody.classList.remove('drag-over');
+        }
+    }
+
+    function onDrop(event) {
+        event.preventDefault();
+        const columnBody = event.target.closest('.kanban-column-body');
+        if (columnBody && draggedElement) {
+            columnBody.classList.remove('drag-over');
+            
+            // Mover el elemento en el DOM
+            columnBody.appendChild(draggedElement);
+            
+            const leadId = draggedElement.id;
+            const newColumnId = columnBody.id;
+            
+            console.log(`Lead ${leadId} movido a la columna ${newColumnId}`);
+            
+            // --- ¡AQUÍ VA LA MAGIA! ---
+            // Este es el momento de notificar al servidor
+            alert(`Lead ${leadId} movido a ${newColumnId}.
+            
+¡Ahora debes guardar este cambio en tu Google Sheet!
+Llama a: google.script.run.actualizarEstadoLead(leadId, newColumnId)`);
+
+            // (Simulación) Mostrar spinner en la tarjeta
+            // ...
+
+            // google.script.run
+            //     .withSuccessHandler(onUpdateSuccess)
+            //     .withFailureHandler(onUpdateFailure)
+            //     .actualizarEstadoLead(leadId, newColumnId); // <-- Función a crear en .gs
+        }
+    }
+
+    // --- INICIALIZACIÓN ---
+    window.onload = function() {
+        populateImages();
+        showTab('pipeline'); // Empezar en la pestaña de Pipeline
+        setupDragAndDrop(); // Activar la función de arrastrar
+    };
+</script>
+
+</body>
+</html>

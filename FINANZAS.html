@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Título específico para esta vista -->
+    <title>Centro de Mando - Finanzas</title>
+    
+    <!-- Recursos de Estilo (Copiados de tu INDEX.html) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- 
+      INICIO: Estilos CSS copiados de INDEX.html 
+      Se incluyen TODOS para mantener la consistencia visual, 
+      incluso si algunos no se usan en esta página.
+    -->
+    <style>
+        /* Define la fuente base para toda la página */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* bg-gray-100 */
+        }
+        
+        /* --- ESTILOS PARA LOS BOTONES "LOGO" --- */
+        .logos-container {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          width: 100%;
+          gap: 1rem; /* 16px */
+          transition: all 0.48s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .logo {
+          min-height: 120px;
+          display: flex;
+          flex-direction: column; 
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          padding: 16px; 
+          border-radius: 12px;
+          transition: all 0.48s cubic-bezier(0.23, 1, 0.32, 1);
+          cursor: pointer;
+        }
+        .logo img {
+          width: 140px;
+          height: 140px;
+          object-fit: contain;
+          transition: all 0.48s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .logo-title {
+          font-size: 1rem;
+          font-weight: 600;
+          text-align: center;
+          transition: all 0.48s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .logo:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .logos-container:hover .logo:not(:hover) {
+          transform: scale(0.95);
+          opacity: 0.7;
+          filter: none;
+        }
+        
+        /* --- ESTILOS PARA EL SCREENSAVER (Marquee) --- */
+        #screensaver-screen .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: #fff;
+            border: 9px solid #DEE1E4;
+            overflow: hidden;
+            animation: cloud-loop-ss 0.7s ease infinite alternate;
+        }
+        #screensaver-screen .logo-track {
+            display: flex;
+            width: calc(2 * (4 * (100px + 16px))); 
+            animation: marquee 10s linear infinite;
+        }
+        #screensaver-screen .logo-track img {
+            width: 100px;
+            margin: 0 8px;
+        }
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); } 
+        }
+        @keyframes cloud-loop-ss {
+            0% { transform: translateY(5px); }
+            100% { transform: translateY(-5px); }
+        }
+
+        /* --- ESTILOS PARA EL FOOTER Y FLIP COUNTERS --- */
+        .footer-card-grid {
+          display: grid;
+          grid-template-columns: repeat(1, 1fr); 
+          gap: 1.5rem; /* 24px */
+        }
+        @media (min-width: 768px) {
+          .footer-card-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+        @media (min-width: 1024px) {
+          .footer-card-grid {
+            grid-template-columns: repeat(4, 1fr);
+          }
+        }
+        .footer-card {
+          background-color: white;
+          border-radius: 0.5rem; /* 8px */
+          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+          padding: 0.75rem; /* 12px - TAMAÑO REDUCIDO */
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.25rem; /* 4px */
+        }
+        .footer-card-title {
+          font-size: 0.875rem; /* 14px */
+          font-weight: 500;
+          color: #6b7280; /* text-gray-500 */
+        }
+        
+        /* --- INICIO: NUEVOS ESTILOS FOOTER --- */
+        .card {
+          height: 70px; /* Altura fija */
+          background: #00008B;
+          border-radius: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: left;
+          backdrop-filter: blur(10px);
+          transition: 0.5s ease-in-out;
+          padding: 0 10px; /* Padding horizontal */
+        }
+        .card:hover {
+          cursor: pointer;
+          transform: scale(1.05);
+        }
+        .img {
+          width: 50px;
+          height: 50px;
+          margin-left: 10px;
+          border-radius: 10px;
+          background: linear-gradient(#d7cfcf, #9198e5);
+        }
+        .card:hover > .img {
+          transition: 0.5s ease-in-out;
+          background: linear-gradient(#9198e5, #712020);
+        }
+        .textBox {
+          width: calc(100% - 70px); /* Ajustado al nuevo padding/margin */
+          margin-left: 10px;
+          color: white;
+        }
+        .textContent {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .span {
+          font-size: 10px;
+          color: #aaa; /* Color más suave para el título */
+        }
+        .h1 {
+          font-size: 16px;
+          font-weight: bold;
+          /* El color (verde/rojo) se aplicará con JS */
+        }
+        .p {
+          font-size: 12px;
+          font-weight: lighter;
+          color: #ddd; /* Color más suave para el dato secundario */
+        }
+        /* --- FIN: NUEVOS ESTILOS FOOTER --- */
+        .tick {
+            font-size: 1.5rem; /* 24px - TAMAÑO REDUCIDO */
+            font-weight: 600;
+            white-space: nowrap; 
+        }
+        .tick-green { color: #22c55e; } /* text-green-500 */
+        .tick-red { color: #ef4444; }   /* text-red-500 */
+    </style>
+    <!-- FIN: Estilos CSS copiados de INDEX.html -->
+</head>
+
+<body class="h-full bg-gray-100">
+
+    <!-- 
+      NUEVO HEADER DE PÁGINA:
+      Adaptado desde CLIENTES.html
+    -->
+    <header class="w-full bg-blue-600">
+        <div class="w-full max-w-7xl mx-auto flex justify-between items-center pt-8 pb-10 px-4 sm:px-6 lg:px-8"> <!-- Padding responsivo -->
+            
+            <!-- Logo Interactivo -->
+            <img data-src-key="logo" alt="Logo" 
+                 class="h-10 w-auto cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-95 hover:drop-shadow-lg" 
+                 onclick="handleNavigation('INDEX')">
+            
+            <h1 id="header-title" class="text-3xl font-bold text-white hidden md:block">Centro de Mando: Finanzas</h1> <!-- Título actualizado -->
+            
+            <!-- Botón de Volver/Búsqueda (NUEVO DISEÑO) -->
+            <button
+              id="btn-back-to-search" 
+              onclick="handleNavigation('INDEX')"
+              type="button"
+              class="bg-white text-center w-48 rounded-2xl h-14 relative text-blue-700 text-xl font-semibold border-4 border-white group"
+            >
+              <div
+                class="bg-blue-600 rounded-xl h-12 w-1/4 grid place-items-center absolute left-0 top-0 group-hover:w-full z-10 duration-500"
+              >
+                <svg
+                  class="w-6 h-6"
+                  viewBox="0 0 1024 1024"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fill="#FFFFFF" 
+                    d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z"
+                  ></path>
+                  <path
+                    fill="#FFFFFF"
+                    d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z"
+                  ></path>
+                </svg>
+              </div>
+              <p class="translate-x-4 transition-transform duration-500 group-hover:translate-x-0">Volver</p> 
+            </button>
+        </div>
+    </header>
+
+    <!-- Contenedor Principal de la Vista -->
+    <main class="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- Navegación de Pestañas -->
+        <div class="mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="-mb-px flex space-x-4" aria-label="Tabs">
+                    <!-- Pestaña 1 (Activa por defecto) -->
+                    <button id="tab-btn-obligaciones"
+                        class="tab-btn whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm rounded-t-lg bg-white text-blue-600 border-blue-600 shadow-sm"
+                        aria-current="page">
+                        Obligaciones Unificadas
+                    </button>
+                    <!-- Pestaña 2 -->
+                    <button id="tab-btn-caja"
+                        class="tab-btn whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-white/60 rounded-t-lg"
+                        aria-current="false">
+                        Caja y Gastos
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- 
+          CONTENIDO DE PESTAÑAS 
+        -->
+
+        <!-- Pestaña 1: Obligaciones Unificadas -->
+        <div id="tab-panel-obligaciones" class="tab-panel">
+            <div class="bg-white rounded-lg shadow-xl overflow-hidden">
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Lista de Pagos Priorizada</h2>
+                    <p class="mt-1 text-sm text-gray-600">Nómina primero, seguido por pasivos ordenados por vencimiento.</p>
+                </div>
+
+                <!-- Contenedor de la lista (tabla) -->
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prioridad</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Concepto</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acreedor / Empleado</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vencimiento</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Monto Pendiente</th>
+                            </tr>
+                        </thead>
+                        <!-- Cuerpo de la tabla (se rellena con JS) -->
+                        <tbody id="obligaciones-tbody" class="bg-white divide-y divide-gray-200">
+                            
+                            <!-- Indicador de Carga -->
+                            <tr id="obligaciones-loader">
+                                <td colspan="6" class="px-6 py-12 text-center">
+                                    <div class="flex justify-center items-center gap-2 text-gray-500">
+                                        <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Cargando obligaciones...
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- Estado Vacío -->
+                            <tr id="obligaciones-empty" class="hidden">
+                                <td colspan="6" class="px-6 py-12 text-center">
+                                    <h3 class="text-lg font-medium text-green-600">¡Todo al día!</h3>
+                                    <p class="text-gray-500">No se encontraron obligaciones pendientes.</p>
+                                </td>
+                            </tr>
+                            
+                            <!-- Las filas de datos se insertarán aquí -->
+                            
+                        </tbody>
+                        <tfoot class="bg-gray-50">
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-right text-sm font-bold text-gray-700 uppercase">Total Pendiente</td>
+                                <td id="obligaciones-total" class="px-6 py-4 text-right text-sm font-bold text-red-600">$ 0,00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña 2: Caja y Gastos -->
+        <div id="tab-panel-caja" class="tab-panel hidden">
+            
+            <!-- Grid de dos columnas para formulario y saldos -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                <!-- Columna 1: Formulario de Registro de Gasto -->
+                <div class="bg-white rounded-lg shadow-xl p-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Registrar Gasto Variable</h2>
+                    <p class="mt-1 text-sm text-gray-600">Registra aquí los gastos de `GASTOS_VARIOS.csv`.</p>
+                    
+                    <form id="gasto-form" class="mt-6 space-y-4">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="gasto-fecha" class="block text-sm font-medium text-gray-700">Fecha</label>
+                                <input type="date" id="gasto-fecha" required
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="gasto-monto" class="block text-sm font-medium text-gray-700">Monto</label>
+                                <input type="number" id="gasto-monto" placeholder="150000" required
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="gasto-concepto" class="block text-sm font-medium text-gray-700">Concepto</label>
+                            <input type="text" id="gasto-concepto" placeholder="Transporte mercancía" required
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+                        
+                        <div>
+                            <label for="gasto-origen" class="block text-sm font-medium text-gray-700">Cuenta de Origen (Caja)</label>
+                            <select id="gasto-origen" required
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <option value="">Cargando cuentas...</option>
+                                <!-- Opciones de `CASH_ON_HAND.csv` se cargan aquí -->
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="gasto-categoria" class="block text-sm font-medium text-gray-700">Categoría</label>
+                            <select id="gasto-categoria" required
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <option>Operativo</option>
+                                <option>Administrativo</option>
+                                <option>Imprevisto</option>
+                                <option>Transporte</option>
+                                <option>Servicios Públicos</option>
+                                <option>Otro</option>
+                            </select>
+                        </div>
+
+                        <!-- Mensaje de feedback -->
+                        <div id="gasto-feedback" class="text-sm h-5"></div>
+
+                        <!-- Botón de Envío -->
+                        <div class="pt-2">
+                            <button type="submit" id="gasto-submit-btn"
+                                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-300">
+                                Registrar Gasto
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Columna 2: Saldos en Caja -->
+                <div class="bg-white rounded-lg shadow-xl p-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Saldos en Caja y Bancos</h2>
+                    <p class="mt-1 text-sm text-gray-600">Vista simple de `CASH_ON_HAND.csv`.</p>
+
+                    <!-- Indicador de Carga -->
+                    <div id="caja-loader" class="mt-6">
+                        <div class="flex justify-center items-center gap-2 text-gray-500">
+                            <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Cargando saldos...
+                        </div>
+                    </div>
+
+                    <!-- Lista de Saldos -->
+                    <div id="caja-list" class="mt-6 space-y-3">
+                        <!-- Los saldos se insertarán aquí. Ej:
+                        <div class="flex justify-between items-center text-lg">
+                            <span class="text-gray-700">Efectivo Oficina:</span>
+                            <span class="font-bold text-gray-900">$ 1.200.000,00</span>
+                        </div>
+                        -->
+                    </div>
+
+                    <!-- Total -->
+                    <div id="caja-total-container" class="mt-6 pt-4 border-t border-gray-200 hidden">
+                        <div class="flex justify-between items-center text-xl">
+                            <span class="font-bold text-gray-900">TOTAL DISPONIBLE</span>
+                            <span id="caja-total" class="font-bold text-green-600">$ 0,00</span>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+    
+    <!-- 
+      NUEVO SCRIPT DE PÁGINA:
+      Lógica específica para esta vista de Finanzas.
+    -->
+    <script>
+        // URL del script de Google Apps (igual que en tu INDEX)
+        const SCRIPT_URL = '<?= url ?>';
+
+        // ==================================================================
+        // LISTADO CENTRAL DE IMÁGENES (AÑADIDO DESDE INDEX)
+        // ==================================================================
+        const imageConfig = {
+            logo: "https://i.postimg.cc/BQ2Sp0T4/Logotransparente.png"
+        };
+
+        function populateImages() {
+            const images = document.querySelectorAll('[data-src-key]');
+            images.forEach(img => {
+                const key = img.getAttribute('data-src-key');
+                if (imageConfig[key]) {
+                    img.src = imageConfig[key];
+                }
+            });
+        }
+        // ==================================================================
+
+
+        // --- ICONOS SVG para la tabla ---
+        const ICONO_PRIORIDAD_ALTA = `
+            <svg class="w-5 h-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.395L8 5.402l-2.946-2.21a1 1 0 00-1.448.396L2 10.582l-.004.005a1 1 0 00.999 1.41l2.21-2.945 2.21 2.945a1 1 0 001.815-.59L8 5.402l2.135 2.847a1 1 0 001.815-.59l.004-.005L13.996 3.61a1 1 0 00-1.601-1.057zM10 12a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+              <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 10a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+            </svg>`;
+            
+        const ICONO_PRIORIDAD_MEDIA = `
+            <svg class="w-5 h-5 text-yellow-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM10 13a1 1 0 100-2 1 1 0 000 2zm-1-4a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" />
+            </svg>`;
+
+        // --- Formateador de Moneda ---
+        const currencyFormatter = new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        });
+        
+        const formatCurrency = (value) => {
+            const num = parseFloat(value);
+            if (isNaN(num)) return '$ 0';
+            return currencyFormatter.format(num);
+        };
+
+        // --- Lógica de la Página ---
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- ¡NUEVA LÍNEA! ---
+            populateImages(); // Cargar el logo en el header
+            // --- FIN NUEVA LÍNEA ---
+            
+            // --- Referencias DOM ---
+            // const btnVolver = document.getElementById('btn-volver'); // Ya no se usa este ID
+            
+            const tabBtnObligaciones = document.getElementById('tab-btn-obligaciones');
+            const tabBtnCaja = document.getElementById('tab-btn-caja');
+            const tabPanelObligaciones = document.getElementById('tab-panel-obligaciones');
+            const tabPanelCaja = document.getElementById('tab-panel-caja');
+            const allTabBtns = [tabBtnObligaciones, tabBtnCaja];
+            const allTabPanels = [tabPanelObligaciones, tabPanelCaja];
+
+            const obligacionesTbody = document.getElementById('obligaciones-tbody');
+            const obligacionesLoader = document.getElementById('obligaciones-loader');
+            const obligacionesEmpty = document.getElementById('obligaciones-empty');
+            const obligacionesTotal = document.getElementById('obligaciones-total');
+
+            const cajaLoader = document.getElementById('caja-loader');
+            const cajaList = document.getElementById('caja-list');
+            const cajaTotalContainer = document.getElementById('caja-total-container');
+            const cajaTotal = document.getElementById('caja-total');
+
+            const gastoForm = document.getElementById('gasto-form');
+            const gastoSubmitBtn = document.getElementById('gasto-submit-btn');
+            const gastoFeedback = document.getElementById('gasto-feedback');
+            const gastoOrigenSelect = document.getElementById('gasto-origen');
+            const gastoFechaInput = document.getElementById('gasto-fecha');
+
+            // --- Lógica de Navegación ---
+            // El botón de volver ahora usa handleNavigation('INDEX') directamente en el HTML
+
+            // --- Lógica de Pestañas ---
+            function showTab(tabName) {
+                allTabPanels.forEach(panel => panel.classList.add('hidden'));
+                allTabBtns.forEach(btn => {
+                    btn.classList.remove('bg-white', 'text-blue-600', 'border-blue-600', 'shadow-sm');
+                    btn.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'hover:bg-white/60');
+                    btn.setAttribute('aria-current', 'false');
+                });
+
+                let activeBtn, activePanel;
+                if (tabName === 'caja') {
+                    activeBtn = tabBtnCaja;
+                    activePanel = tabPanelCaja;
+                } else {
+                    activeBtn = tabBtnObligaciones;
+                    activePanel = tabPanelObligaciones;
+                }
+
+                activePanel.classList.remove('hidden');
+                activeBtn.classList.add('bg-white', 'text-blue-600', 'border-blue-600', 'shadow-sm');
+                activeBtn.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'hover:bg-white/60');
+                activeBtn.setAttribute('aria-current', 'page');
+            }
+
+            tabBtnObligaciones.addEventListener('click', () => showTab('obligaciones'));
+            tabBtnCaja.addEventListener('click', () => showTab('caja'));
+
+            // --- Lógica de Carga de Datos ---
+            
+            // Función Principal de Carga
+            function mainLoad() {
+                loadObligaciones();
+                loadCaja();
+            }
+
+            // 1. Cargar Obligaciones
+            function loadObligaciones() {
+                obligacionesLoader.classList.remove('hidden');
+                obligacionesEmpty.classList.add('hidden');
+                obligacionesTbody.innerHTML = ''; // Limpiar (excepto loader)
+                obligacionesTbody.appendChild(obligacionesLoader);
+                
+                google.script.run
+                    .withSuccessHandler(renderObligaciones)
+                    .withFailureHandler(showError)
+                    .getObligacionesConsolidadas(); // <-- ¡Tu nueva función de backend!
+            }
+
+            // 2. Cargar Saldos de Caja
+            function loadCaja() {
+                cajaLoader.classList.remove('hidden');
+                cajaList.innerHTML = '';
+                gastoOrigenSelect.innerHTML = '<option value="">Cargando...</option>';
+                cajaTotalContainer.classList.add('hidden');
+
+                google.script.run
+                    .withSuccessHandler(renderCaja)
+                    .withFailureHandler(showError)
+                    .getSaldosCaja(); // Asumo que esta función existe o la crearás
+            }
+
+            // --- Lógica de Renderizado ---
+
+            // 1. Renderizar Obligaciones
+            function renderObligaciones(response) {
+                obligacionesLoader.classList.add('hidden');
+                obligacionesTbody.innerHTML = ''; // Limpiar todo
+
+                if (response.success && response.obligaciones.length > 0) {
+                    let total = 0;
+                    response.obligaciones.forEach(item => {
+                        const tr = document.createElement('tr');
+                        tr.classList.add(item.Estado === 'En Mora' ? 'bg-red-50' : 'hover:bg-gray-50');
+
+                        const prioridadIcon = (item.Tipo === 'Nómina') ? ICONO_PRIORIDAD_ALTA : ICONO_PRIORIDAD_MEDIA;
+                        const monto = parseFloat(item.Monto_Pendiente) || 0;
+                        total += monto;
+
+                        tr.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex justify-center">${prioridadIcon}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">${item.Concepto}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${item.Tipo === 'Nómina' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}">
+                                    ${item.Tipo}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${item.Acreedor_Empleado}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${item.Fecha_Vencimiento}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900">${formatCurrency(monto)}</td>
+                        `;
+                        obligacionesTbody.appendChild(tr);
+                    });
+                    
+                    obligacionesTotal.textContent = formatCurrency(total);
+                
+                } else {
+                    // Si no hay éxito o no hay datos
+                    obligacionesTbody.appendChild(obligacionesEmpty);
+                    obligacionesEmpty.classList.remove('hidden');
+                    obligacionesTotal.textContent = formatCurrency(0);
+                }
+            }
+            
+            // 2. Renderizar Caja y Saldos
+            function renderCaja(response) {
+                cajaLoader.classList.add('hidden');
+                cajaList.innerHTML = '';
+                gastoOrigenSelect.innerHTML = '<option value="">Seleccione una cuenta...</option>';
+
+                if (response.success && response.saldos.length > 0) {
+                    let total = 0;
+                    response.saldos.forEach(cuenta => {
+                        const saldo = parseFloat(cuenta.Saldo) || 0;
+                        total += saldo;
+                        
+                        // Rellenar lista de saldos
+                        const div = document.createElement('div');
+                        div.className = 'flex justify-between items-center text-lg';
+                        div.innerHTML = `
+                            <span class="text-gray-700">${cuenta.Cuenta}:</span>
+                            <span class="font-bold text-gray-900">${formatCurrency(saldo)}</span>
+                        `;
+                        cajaList.appendChild(div);
+
+                        // Rellenar select del formulario
+                        const option = document.createElement('option');
+                        option.value = cuenta.Cuenta;
+                        option.textContent = `${cuenta.Cuenta} (${formatCurrency(saldo)})`;
+                        gastoOrigenSelect.appendChild(option);
+                    });
+                    
+                    cajaTotal.textContent = formatCurrency(total);
+                    cajaTotalContainer.classList.remove('hidden');
+
+                } else {
+                    cajaList.innerHTML = '<p class="text-gray-500 text-center">No se encontraron cuentas de caja.</p>';
+                    cajaTotalContainer.classList.add('hidden');
+                }
+            }
+
+            // --- Lógica de Formulario de Gasto ---
+            
+            // Setear fecha actual por defecto
+            gastoFechaInput.value = new Date().toISOString().split('T')[0];
+            
+            gastoForm.addEventListener('submit', handleGastoSubmit);
+
+            function handleGastoSubmit(e) {
+                e.preventDefault();
+                gastoSubmitBtn.disabled = true;
+                gastoSubmitBtn.textContent = 'Registrando...';
+                gastoFeedback.textContent = '';
+                
+                const gasto = {
+                    fecha: document.getElementById('gasto-fecha').value,
+                    monto: document.getElementById('gasto-monto').value,
+                    concepto: document.getElementById('gasto-concepto').value,
+                    origen: document.getElementById('gasto-origen').value,
+                    categoria: document.getElementById('gasto-categoria').value,
+                };
+                
+                // Validación simple
+                if (!gasto.fecha || !gasto.monto || !gasto.concepto || !gasto.origen) {
+                    showGastoFeedback('Por favor, complete todos los campos.', false);
+                    gastoSubmitBtn.disabled = false;
+                    gastoSubmitBtn.textContent = 'Registrar Gasto';
+                    return;
+                }
+
+                google.script.run
+                    .withSuccessHandler(onGastoSaved)
+                    .withFailureHandler(onGastoError)
+                    .registrarGastoVariable(gasto); // <-- ¡Tu nueva función de backend!
+            }
+
+            function onGastoSaved(response) {
+                if (response.success) {
+                    showGastoFeedback('Gasto registrado exitosamente.', true);
+                    gastoForm.reset();
+                    gastoFechaInput.value = new Date().toISOString().split('T')[0]; // Resetear fecha
+                    
+                    // Recargar los saldos de caja para que se actualice la UI
+                    loadCaja(); 
+                } else {
+                    onGastoError(new Error(response.message || 'Error desconocido al guardar.'));
+                }
+                gastoSubmitBtn.disabled = false;
+                gastoSubmitBtn.textContent = 'Registrar Gasto';
+            }
+            
+            function onGastoError(error) {
+                showGastoFeedback(error.message, false);
+                gastoSubmitBtn.disabled = false;
+                gastoSubmitBtn.textContent = 'Registrar Gasto';
+            }
+            
+            function showGastoFeedback(message, isSuccess) {
+                gastoFeedback.textContent = message;
+                gastoFeedback.className = isSuccess ? 'text-sm text-green-600' : 'text-sm text-red-600';
+                
+                setTimeout(() => {
+                    gastoFeedback.textContent = '';
+                }, 4000);
+            }
+
+            // --- Manejo de Errores Global ---
+            function showError(error) {
+                console.error('Error en Google Apps Script:', error);
+                // Ocultar todos los loaders para que no se quede pegado
+                obligacionesLoader.classList.add('hidden');
+                cajaLoader.classList.add('hidden');
+                // Mostrar un error genérico en la tabla
+                obligacionesTbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-red-600">
+                            <strong>Error al cargar:</strong> ${error.message}
+                        </td>
+                    </tr>`;
+                cajaList.innerHTML = `<p class="text-red-600 text-center"><strong>Error:</strong> ${error.message}</p>`;
+            }
+
+            // --- NAVEGACIÓN DEL DASHBOARD (Añadida desde CLIENTES.html) ---
+            function handleNavigation(pageId) {
+                console.log('Navegar a:', pageId);
+                if (pageId === 'INDEX') {
+                    // Redirige de vuelta al dashboard principal (sin "?page=")
+                    window.top.location.href = SCRIPT_URL;
+                } else {
+                    // Redirige a una sub-página
+                    window.top.location.href = SCRIPT_URL + "?page=" + pageId;
+                }
+            }
+
+            // --- INICIO: CORRECCIÓN DE ERROR "google is not defined" ---
+            /**
+             * Ejecuta una función solo cuando la API de google.script.run está disponible.
+             * Esto previene el error "google is not defined" en la carga inicial.
+             */
+            function runWhenReady(func) {
+                if (typeof google !== 'undefined' && google.script && google.script.run) {
+                    func();
+                } else {
+                    // console.log('Esperando a google.script.run...'); // Opcional: para debugging
+                    setTimeout(() => runWhenReady(func), 100); // Reintentar en 100ms
+                }
+            }
+            // --- FIN: CORRECCIÓN DE ERROR ---
+
+
+            // --- Carga Inicial ---
+            // mainLoad(); // <-- Llamada original (propensa a errores)
+            runWhenReady(mainLoad); // <-- Llamada corregida
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alegra POS - Versión Ligera</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Roboto', 'sans-serif'],
+                    },
+                    colors: {
+                        // Colores inferidos del UI
+                        'alegra-green': '#00b19d',
+                        'alegra-green-dark': '#00a794',
+                        'alegra-green-light': '#00cbb4',
+                        'alegra-dark': '#00535e',
+                        'alegra-dark-light': '#006a78',
+                        'alegra-gray-light': '#f4f5fb',
+                        'alegra-gray-medium': '#e4e9f6',
+                        'alegra-gray-dark': '#707070',
+                        'alegra-text': '#474747',
+                        'alegra-secondary': '#707070',
+                        'alegra-tertiary': '#a3adc2',
+                        'alegra-border': '#ccc',
+                        'alegra-success': '#16a34a', // Verde para "Disponible"
+                        'alegra-warning': '#f59e0b', // Amarillo para "Agotado"
+                        'alegra-danger': '#ef4444', // Rojo para errores
+                    }
+                },
+            },
+        };
+    </script>
+    <style>
+        /* Estilos base para el cuerpo (MODIFICADO) */
+        body {
+            font-family: 'Inter', 'Roboto', 'sans-serif';
+            color: #707070; /* Color de texto base, el header lo sobrescribe */
+            font-size: 14px;
+            overflow: hidden; /* Evitar scroll en el body */
+            background-color: #40185f; /* Color de fondo de PRODUCTOS.html */
+        }
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+          background: #e4e9f6;
+          border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #a3adc2;
+          border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #8592ad;
+        }
+
+        /* --- INICIO: ESTILOS SIDEBAR COLAPSABLE --- */
+        #sidebar {
+            transition: width 0.3s ease-in-out;
+        }
+
+        /* Estado Colapsado */
+        .sidebar-collapsed #sidebar {
+            /* ----- MODIFICADO: Reducido el ancho colapsado ----- */
+            width: 64px; /* Ancho colapsado (antes 80px) */
+        }
+        .sidebar-collapsed #sidebar .category-text {
+            display: none; /* Ocultar texto */
+        }
+        .sidebar-collapsed #sidebar .category-icon {
+            /* ----- MODIFICADO: Reducido el tamaño del icono colapsado ----- */
+            width: 36px;  /* (antes 40px) */
+            height: 36px; /* (antes 40px) */
+            font-size: 0.875rem; /* Texto de iniciales más pequeño (antes 1rem) */
+        }
+        .sidebar-collapsed #sidebar .category-item {
+             border-right-width: 0; /* Ocultar borde activo */
+             justify-content: center;
+        }
+        .sidebar-collapsed #sidebar .category-item.active {
+            border-left: 4px solid #00b19d;
+            background-color: #f0fdfa;
+        }
+        /* --- FIN: ESTILOS SIDEBAR --- */
+
+        /* --- INICIO: ESTILOS DROPDOWN (Adaptado de tu ejemplo) --- */
+        .dropdown-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        /* El 'h1' es el botón que muestra la selección */
+        .dropdown-wrapper .dropdown-display {
+            display: inline-block;
+            padding: 8px 10px; /* Ajustado para el POS */
+            position: relative;
+            background: #fff; /* Fondo blanco */
+            color: #474747; /* Texto oscuro */
+            font-size: 14px;
+            font-weight: normal;
+            text-align: left;
+            border: 1px solid #ccc; /* Borde Alegra */
+            border-radius: 5px;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            height: 42px; /* Altura fija */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Estilo para el input de cliente (que parece un dropdown-display) */
+        .dropdown-wrapper .dropdown-display-input {
+             display: inline-block;
+            padding: 8px 10px;
+            position: relative;
+            background: #fff;
+            color: #474747;
+            font-size: 14px;
+            font-weight: normal;
+            text-align: left;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            height: 42px;
+        }
+        .dropdown-wrapper .dropdown-display-input:focus {
+            outline: none;
+            border-color: #00b19d; /* Borde verde al enfocar */
+        }
+
+        .dropdown-wrapper .dropdown-display b {
+            color: #00535e; /* Texto fuerte */
+            font-weight: 500;
+        }
+
+        /* Contenedor de la lista */
+        .dropdown-wrapper ul {
+            display: none; /* Oculto por defecto */
+            position: absolute;
+            width: 100%;
+            list-style: none;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            z-index: 50; /* Encima de todo */
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        /* Mostrar lista cuando el wrapper tiene clase 'open' */
+        .dropdown-wrapper.open ul {
+            display: block;
+        }
+        .dropdown-wrapper.open .dropdown-display {
+            border-radius: 5px 5px 0 0;
+            border-color: #00b19d;
+        }
+
+        /* ----- INICIO MODIFICACIÓN: Flechas giratorias para dropdowns ----- */
+        .dropdown-wrapper.open .dropdown-display svg,
+        .dropdown-wrapper.open #dropdown-cliente svg {
+            /* Gira la flecha cuando el menú está abierto */
+            transform: rotate(180deg);
+        }
+        .dropdown-wrapper.open #dropdown-cliente svg {
+            /* Ajuste para el ícono de cliente que tiene translate-y */
+             transform: translateY(-50%) rotate(180deg);
+        }
+        /* ----- FIN MODIFICACIÓN ----- */
+
+
+        .dropdown-wrapper li {
+            padding: 10px 12px;
+            color: #474747;
+            text-align: left;
+            border-top: 1px solid #f4f5fb; /* Gris claro */
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dropdown-wrapper li b {
+            color: #00535e;
+            font-weight: 500;
+        }
+
+        .dropdown-wrapper li:hover,
+        .dropdown-wrapper li.selected {
+            background-color: #f4f5fb; /* Gris claro hover */
+        }
+        
+        /* Estilos para los dropdown de iconos (Moneda, Pago) */
+        .dropdown-wrapper-icon {
+            position: relative;
+        }
+        .dropdown-wrapper-icon button {
+            position: relative;
+            z-index: 51;
+        }
+        .dropdown-wrapper-icon ul {
+            right: 0;
+            width: 160px; /* Ancho fijo para menús de icono */
+            margin-top: 2px;
+        }
+        .dropdown-wrapper-icon.open button {
+            color: #00b19d; /* Icono verde al abrir */
+        }
+        
+        /* ----- INICIO: Estilos Carrito Funcional ----- */
+        .cart-item {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e4e9f6;
+            background-color: #fff;
+        }
+        .cart-item-details {
+            overflow: hidden;
+        }
+        .cart-item-name {
+            font-weight: 500;
+            color: #474747;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cart-item-meta {
+            font-size: 12px;
+            color: #707070;
+            display: flex;
+            gap: 8px;
+        }
+        .cart-item-quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .cart-item-quantity-controls button {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background-color: #f4f5fb;
+            color: #707070;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            line-height: 1;
+            border: 1px solid #e4e9f6;
+        }
+        .cart-item-quantity-controls button:hover {
+            background-color: #e4e9f6;
+            color: #474747;
+        }
+        /* --- INICIO: Estilo para controles deshabilitados (Req. 2) --- */
+        .cart-item-quantity-controls button:disabled {
+            opacity: 0.7;
+            pointer-events: none;
+            background-color: #f4f5fb;
+            color: #a3adc2;
+        }
+        .cart-item-quantity-controls input:disabled {
+            background-color: #f4f5fb;
+            color: #a3adc2;
+            opacity: 0.7;
+        }
+        /* --- FIN: Estilo --- */
+        
+        .cart-item-quantity-controls input {
+            width: 40px;
+            height: 28px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #474747;
+            /* Ocultar flechas de input number */
+            -moz-appearance: textfield;
+        }
+        .cart-item-quantity-controls input::-webkit-outer-spin-button,
+        .cart-item-quantity-controls input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .cart-item-total {
+            font-weight: 600;
+            color: #474747;
+            text-align: right;
+            font-size: 15px;
+        }
+        
+        .printer-disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        
+        /* Animación de error */
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+          20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        .shake {
+          animation: shake 0.5s ease-in-out;
+        }
+        .input-error .dropdown-display,
+        .input-error .dropdown-display-input,
+        .input-error select {
+          border-color: #ef4444 !important; /* Tailwind 'alegra-danger' */
+          background-color: #fee2e2; /* Tailwind 'red-100' */
+        }
+        /* --- FIN: Estilos Carrito Funcional --- */
+
+        /* --- FIN: ESTILOS DROPDOWN --- */
+    </style>
+</head>
+<body class="bg-white">
+
+    <div id="app-container" class="flex flex-col h-screen antialiased sidebar-collapsed">
+
+        <header class="flex justify-between items-center h-20 px-4 flex-shrink-0"> <div class="flex items-center space-x-4">
+                <img src="https://i.postimg.cc/BQ2Sp0T4/Logotransparente.png" alt="Logo" 
+                    onclick="handleNavigation('INDEX')"
+                         class="h-10 w-auto cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-95 hover:drop-shadow-lg">
+                <h1 class="text-3xl font-bold text-blue-600 hidden sm:block">Facturación POS</h1>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <button
+                    onclick="handleNavigation('INDEX')"
+                    type="button"
+                    style="font-family: 'Inter', sans-serif;"
+                    class="bg-white text-center w-48 rounded-2xl h-14 relative text-blue-700 text-xl font-semibold border-4 border-white group shadow-md"
+                >
+                    <div
+                        class="bg-blue-600 rounded-xl h-12 w-1/4 grid place-items-center absolute left-0 top-0 group-hover:w-full z-10 duration-500"
+                    >
+                        <svg
+                            class="w-6 h-6"
+                            viewBox="0 0 1024 1024"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                fill="#FFFFFF" 
+                                d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z"
+                            ></path>
+                            <path
+                                fill="#FFFFFF"
+                                d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z"
+                            ></path>
+                        </svg>
+                    </div>
+                    <p class="translate-x-4 transition-transform duration-500 group-hover:translate-x-0">Volver</p> 
+                </button>
+            </div>
+        </header>
+
+        <main class="flex-1 flex flex-row overflow-hidden bg-alegra-gray-light">
+            
+            <aside id="sidebar" class="w-20 flex-shrink-0 bg-white border-r border-alegra-gray-medium overflow-y-auto">
+                <div class="flex items-center justify-center pt-4 px-2"> <button id="sidebar-toggle-btn" class="flex items-center justify-center w-12 h-12 rounded-lg text-alegra-dark hover:text-alegra-green hover:bg-gray-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
+                            <path d="M4 6l16 0"></path><path d="M4 12l16 0"></path><path d="M4 18l16 0"></path>
+                        </svg>
+                    </button>
+                </div>
+                <nav id="category-list" class="flex flex-col items-center space-y-2 pt-2"> <div class="category-item flex flex-col items-center w-full py-2 px-1 cursor-pointer" data-category-name="Bobinas">
+                        <div class="category-icon w-12 h-12 rounded-lg border border-alegra-border flex items-center justify-center bg-green-500 text-white text-xl font-bold">B</div>
+                        <p class="category-text text-xs text-center mt-1.5 font-medium text-alegra-dark truncate w-full">Bobinas</p>
+                    </div>
+                    <div class="category-item flex flex-col items-center w-full py-2 px-1 cursor-pointer" data-category-name="Conos">
+                        <div class="category-icon w-12 h-12 rounded-lg border border-alegra-border flex items-center justify-center overflow-hidden">
+                            <img src="https://files.alegra.com/a262d238-acef-41e8-8951-ba9a7d44dcd7%2Fitem-category%2F01J1C23XN8M5T01WM30Q4HM56N-CPE1Qx8-AGx1U.jpg.jpg.gz?Expires=8640000000000&Key-Pair-Id=K1B5F9BFO0SY64&Signature=0WXd4U1PZdD8zF84kew0iIe782WdWitk18BFUmKlWO4bxT0b-TJAlsrtt1627iT0O-Uf~PZfAFGOTgDpwZ5aiqpld-vZsDmzEs6R1074eenIrE~9Zz8tZMyV3kzKa5jez0totzjrOcymw24Pd355senWgAeUnhW1Fb-1JMRpyaJl-~zJgpZJNYG9zPPHpudmETKiu7DH4GnVm2SM063KpUJKY8xAyi~U1QhKE9JBRobHpSzWTCGFhp4Sf-aGUX8wIOOMWhOlgZb55oLNwefqaSxRH8rfxd2UM06g3jZJUTcFU~LiBIIhnnOaINQgsfvBxthu-iAjOrLCie3FFI~vQ__" alt="Conos" class="w-full h-full object-cover" onerror="handleCategoryImgError(this, 'Conos')">
+                        </div>
+                        <p class="category-text text-xs text-center mt-1.5 font-medium text-alegra-dark truncate w-full">Conos</p>
+                    </div>
+                    <div class="category-item flex flex-col items-center w-full py-2 px-1 cursor-pointer" data-category-name="Distribuidores">
+                        <div class="category-icon w-12 h-12 rounded-lg border border-alegra-border flex items-center justify-center bg-blue-500 text-white text-xl font-bold">D</div>
+                        <p class="category-text text-xs text-center mt-1.5 font-medium text-alegra-dark truncate w-full">Distribuidores</p>
+                    </div>
+                     <div class="category-item flex flex-col items-center w-full py-2 px-1 cursor-pointer" data-category-name="Librillos">
+                        <div class="category-icon w-12 h-12 rounded-lg border border-alegra-border flex items-center justify-center overflow-hidden">
+                            <img src="https://files.alegra.com/a262d238-acef-41e8-8951-ba9a7d44dcd7%2Fitem-category%2F01HHZ2P31NA3ZDWAV96PGFYDR4-Calcas_Mesa%20de%20trabajo%201.png.png.gz?Expires=8640000000000&Key-Pair-Id=K1B5F9BFO0SY64&Signature=viCxp8Pirbnws1LcEqvyVW5GAcboK4zJnM~WBFbFY6lzzDNoekpFxwEUv6DHcneFYUJrE4h~duGCn8IG1Tg3TswKZ0NkGPJrgqtfrCGe9pkK01PxJYkRxBbwQ8smFzgAOwSd-S3XcSh~FWRqlAaTGQqKxWIOFTsch2dsx84kEgYYnXSRLSwqZYrmRExAc3Kmpf7qQT70U1p2IgkzBB-POewSqpqoHkXtvi-TcXEI-Iv8ViDPo8CvnMi7akqE8q-83SM5suDf5eaqI6wY-Ox~3M9CF79GjK9WXpFpI1XXTyvFt8DT14~X~9rz6ka5sibj-jpXnyKZOmLQowX~42BlMw__" alt="Librillos" class="w-full h-full object-cover" onerror="handleCategoryImgError(this, 'Librillos')">
+                        </div>
+                        <p class="category-text text-xs text-center mt-1.5 font-medium text-alegra-dark truncate w-full">Librillos</p>
+                    </div>
+                    </nav>
+            </aside>
+
+            <section class="flex-1 flex flex-col overflow-hidden">
+                <div class="bg-alegra-gray-light p-4">
+                    <div class="flex space-x-2">
+                        <div class="flex-shrink-0 flex">
+                            <button id="search-mode-lupa" class="bg-white border border-alegra-border p-3 rounded-l-md text-alegra-green"> <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"></path><path d="M21 21l-6 -6"></path></svg>
+                            </button>
+                            <button id="search-mode-scan" class="bg-white border-t border-b border-r border-alegra-border p-3 rounded-r-md text-alegra-gray-dark hover:text-alegra-green">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M4 7v-1a2 2 0 0 1 2 -2h2"></path><path d="M4 17v1a2 2 0 0 0 2 2h2"></path><path d="M16 4h2a2 2 0 0 1 2 2v1"></path><path d="M16 20h2a2 2 0 0 0 2 -2v-1"></path><path d="M5 11h1v2h-1z"></path><path d="M10 11l0 2"></path><path d="M14 11h1v2h-1z"></path><path d="M19 11l0 2"></path></svg>
+                            </button>
+                        </div>
+                        <input id="product-search-input" class="w-full border border-alegra-border rounded-md px-4 py-3 focus:outline-none focus:border-alegra-green" type="text" placeholder="Buscar productos por nombre...">
+                        <button onclick="openModal('modal-nuevo-producto')" class="flex items-center bg-alegra-green text-white font-medium px-4 py-3 rounded-md hover:bg-alegra-green-dark whitespace-nowrap">
+                            <span class="hidden md:inline">Nuevo producto</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 md:ml-2">
+                                <path d="M12 5l0 14"></path><path d="M5 12l14 0"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="product-grid" class="flex-1 overflow-y-auto p-4">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                        <div class="product-card relative bg-white rounded-lg shadow border border-alegra-border cursor-pointer opacity-50" data-name="Anillo Joint Silicona - Holder" data-ean="7701112223334" data-category="Distribuidores">
+                            <div class="absolute top-2 left-2 bg-alegra-warning/80 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 mr-1"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
+                                Agotado
+                            </div>
+                            <div class="w-full h-32 bg-alegra-gray-light flex items-center justify-center rounded-t-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-12 h-12 text-alegra-gray-medium"><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z"></path></svg>
+                            </div>
+                            <div class="p-3">
+                                <p class="text-sm font-medium text-alegra-text truncate" title="Anillo Joint Silicona - Holder">Anillo Joint Silicona - Holder</p>
+                                <p class="text-sm font-semibold text-alegra-dark mt-1">$7.000</p>
+                            </div>
+                        </div>
+                        
+                        <div class="product-card relative bg-white rounded-lg shadow border border-alegra-border cursor-pointer hover:border-alegra-green" data-name="Display Filtros Planos 2 c m x 5 0 - E C O" data-ean="7708204996848" data-category="Librillos">
+                            <p class="absolute top-2 left-2 bg-black/40 text-white text-xs px-2 py-0.5 rounded">7708204996848</p>
+                            <p class="absolute top-2 right-2 bg-white/80 text-alegra-dark text-xs font-semibold px-2 py-0.5 rounded">Inv 3</p>
+                            <div class="w-full h-32 bg-alegra-gray-light flex items-center justify-center rounded-t-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-12 h-12 text-alegra-gray-medium"><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z"></path></svg>
+                            </div>
+                            <div class="p-3">
+                                <p class="text-sm font-medium text-alegra-text truncate" title="Display Filtros Planos 2 c m x 5 0 - E C O">Display Filtros Planos 2 c m x 5 0 - E C O</p>
+                                <p class="text-sm font-semibold text-alegra-dark mt-1">$70.001</p>
+                            </div>
+                        </div>
+
+                        <div class="product-card relative bg-white rounded-lg shadow border border-alegra-border cursor-pointer opacity-50" data-name="Bandeja Melanina L - Blanca" data-ean="7701112223335" data-category="Distribuidores">
+                            <div class="absolute top-2 left-2 bg-alegra-warning/80 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 mr-1"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
+                                Agotado
+                            </div>
+                            <div class="w-full h-32 bg-alegra-gray-light flex items-center justify-center rounded-t-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-12 h-12 text-alegra-gray-medium"><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z"></path></svg>
+                            </div>
+                            <div class="p-3">
+                                <p class="text-sm font-medium text-alegra-text truncate" title="Bandeja Melanina L - Blanca">Bandeja Melanina L - Blanca</p>
+                                <p class="text-sm font-semibold text-alegra-dark mt-1">$60.000</p>
+                            </div>
+                        </div>
+
+                        <div class="product-card relative bg-white rounded-lg shadow border border-alegra-border cursor-pointer hover:border-alegra-green" data-name="Conos Pre Enrollados # 1 2 x 6 - A G" data-ean="7708204996701" data-category="Conos">
+                            <p class="absolute top-2 left-2 bg-black/40 text-white text-xs px-2 py-0.5 rounded">7708204996701</p>
+                            <p class="absolute top-2 right-2 bg-white/80 text-alegra-dark text-xs font-semibold px-2 py-0.5 rounded">Inv 993</p>
+                            <div class="w-full h-32 bg-alegra-gray-light flex items-center justify-center rounded-t-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-12 h-12 text-alegra-gray-medium"><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z"></path></svg>
+                            </div>
+                            <div class="p-3">
+                                <p class="text-sm font-medium text-alegra-text truncate" title="Conos Pre Enrollados # 1 2 x 6 - A G">Conos Pre Enrollados # 1 2 x 6 - A G</p>
+                                <p class="text-sm font-semibold text-alegra-dark mt-1">$7.000</p>
+                            </div>
+                        </div>
+                        </div>
+                </div>
+            </section>
+
+            <aside class="w-full md:w-[450px] flex-shrink-0 bg-white border-l border-alegra-gray-medium flex flex-col">
+                <div class="flex-shrink-0">
+                    <div class="flex justify-between items-center h-14 px-6">
+                        <h2 class="font-bold text-alegra-dark">Factura de venta electrónica</h2>
+                        <div class="flex space-x-2 items-center">
+                            
+                            <div id="printer-dropdown" class="dropdown-wrapper dropdown-wrapper-icon printer-disabled"> <button class="dropdown-toggle-icon text-alegra-gray-dark hover:text-alegra-green" title="Imprimir">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2"></path><path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4"></path><path d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z"></path></svg>
+                                </button>
+                                <ul>
+                                    <li data-value="membrete"><b>Imprimir Membrete</b></li>
+                                    <li data-value="tiquete"><b>Imprimir Tiquete</b></li>
+                                </ul>
+                            </div>
+                            <div id="dropdown-moneda" class="dropdown-wrapper dropdown-wrapper-icon">
+                                <button class="dropdown-toggle-icon text-alegra-gray-dark hover:text-alegra-green" title="Seleccionar Moneda">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M7 9m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z"></path><path d="M14 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path d="M17 9v-2a2 2 0 0 0 -2 -2h-10a2 2 0 0 0 -2 2v6a2 2 0 0 0 2 2h2"></path></svg>
+                                </button>
+                                <ul>
+                                    <li data-value="COP" class="selected"><b>COP</b> (Peso Colombiano)</li>
+                                    <li data-value="USD"><b>USD</b> (Dólar Americano)</li>
+                                </ul>
+                            </div>
+                            <div id="dropdown-metodo-pago" class="dropdown-wrapper dropdown-wrapper-icon">
+                                <button class="dropdown-toggle-icon text-alegra-gray-dark hover:text-alegra-green" title="Seleccionar Método de Pago">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M14 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path d="M4 6l8 0"></path><path d="M16 6l4 0"></path><path d="M8 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path d="M4 12l2 0"></path><path d="M10 12l10 0"></path><path d="M17 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path d="M4 18l11 0"></path><path d="M19 18l1 0"></path></svg>
+                                </button>
+                                <ul>
+                                    <li data-value="efectivo"><b>Efectivo</b></li>
+                                    <li data-value="tarjeta"><b>Tarjeta</b></li>
+                                    <li data-value="transferencia"><b>Transferencia</b></li>
+                                    <li data-value="nequi"><b>Nequi</b></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="cart-header-controls" class="px-5 pb-3 space-y-3 transition-opacity duration-300">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label for="cart-customer-type" class="text-xs font-medium text-alegra-secondary">Tipo de Cliente</label>
+                                <select id="cart-customer-type" class="w-full border border-alegra-border rounded-md px-3 py-2 mt-1 text-sm focus:outline-none focus:border-alegra-green h-[42px] transition-all duration-300">
+                                    <option value="final">Cliente Final</option>
+                                    <option value="minorista">Minorista</option>
+                                    <option value="mayorista">Mayorista</option>
+                                </select>
+                            </div>
+                             <div>
+                                <label class="text-xs font-medium text-alegra-secondary">Numeración</label>
+                                <div id="dropdown-numeracion" class="dropdown-wrapper mt-1 transition-all duration-300">
+                                    <div class="relative">
+                                        <h1 class="dropdown-display pr-8"> <span><b>FV</b></span>
+                                        </h1>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-alegra-tertiary absolute top-1/2 right-3 -translate-y-1/2 pointer-events-none transition-transform duration-200">
+                                            <path d="m6 9 6 6 6-6"></path>
+                                        </svg>
+                                    </div>
+                                    <ul>
+                                        <li data-value="FV" class="selected"><b>FV</b></li>
+                                        <li data-value="FE"><b>FE</b></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                          <div>
+                            <label class="text-xs font-medium text-alegra-secondary">Cliente</label>
+                            <div class="flex space-x-2">
+                                <div id="dropdown-cliente" class="dropdown-wrapper mt-1 transition-all duration-300">
+                                    <div class="relative"> 
+                                        <input type="text" class="dropdown-display-input pr-8" value="Consumidor final (222222222222)" data-value="GENERICO" placeholder="Buscar o seleccionar cliente...">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-alegra-tertiary absolute top-1/2 right-3 -translate-y-1/2 pointer-events-none transition-transform duration-200">
+                                            <path d="m6 9 6 6 6-6"></path>
+                                        </svg>
+                                    </div>
+                                    <ul>
+                                        <li data-value="GENERICO" class="selected"><b>Consumidor final</b> (222222222222)</li>
+                                        <li data-value="CLI-0001"><b>Distribuidora Fumar SAS</b> (901.234.567-1)</li>
+                                        <li data-value="CLI-0002"><b>Tienda Humo y Estilo</b> (1018456789)</li>
+                                        <li data-value="CLI-0003"><b>Growshop El Verde</b> (79123456)</li>
+                                        <li data-value="CLI-0004"><b>Importadora Ganjah S.A.</b> (800.555.123-5)</li>
+                                    </ul>
+                                </div>
+                                <button onclick="openModal('modal-nuevo-cliente')" class="flex-shrink-0 bg-gray-100 border border-alegra-border text-alegra-gray-dark rounded-md px-3 py-2 mt-1 hover:bg-alegra-gray-medium h-[42px] transition-all duration-300">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"></path><path d="M16 19h6"></path><path d="M19 16v6"></path><path d="M6 21v-2a4 4 0 0 1 4 -4h4"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                
+                <div id="cart-items-container" class="flex-1 overflow-y-auto bg-alegra-gray-light transition-opacity duration-300">
+                    <div id="cart-empty-state" class="flex flex-col justify-center items-center h-full text-alegra-tertiary text-center px-10">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-16 h-16">
+                            <path d="M10 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path><path d="M5.001 8h13.999a2 2 0 0 1 1.977 2.304l-1.255 7.152a3 3 0 0 1 -2.966 2.544h-9.512a3 3 0 0 1 -2.965 -2.544l-1.255 -7.152a2 2 0 0 1 1.977 -2.304z"></path><path d="M17 10l-2 -6"></path><path d="M7 10l2 -6"></path>
+                        </svg>
+                        <p class="mt-4 text-sm font-medium">Aquí verás los productos que elijas en tu próxima venta</p>
+                    </div>
+                    </div>
+
+                <div class="flex-shrink-0 bg-white p-4 space-y-3 border-t border-alegra-gray-medium">
+                    
+                    <div id="cart-totals" class="hidden space-y-2 text-sm px-1">
+                        <div class="flex justify-between items-center">
+                            <span class="text-alegra-secondary font-medium">Subtotal</span>
+                            <span id="cart-subtotal" class="text-alegra-text font-medium">$0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-alegra-secondary font-medium">IVA (19%)</span>
+                            <span id="cart-iva" class="text-alegra-text font-medium">$0</span>
+                        </div>
+                    </div>
+                    <button id="cart-sell-button" class="w-full bg-gray-200 text-gray-500 rounded-md h-14 flex justify-between items-center px-5 font-bold text-lg transition-all duration-300" disabled>
+                        <span>Vender</span>
+                        <span id="cart-total-display">$0</span>
+                    </button>
+                    <button id="cart-cancel-button" class="w-full bg-transparent text-alegra-secondary rounded-md h-12 flex justify-between items-center px-5 font-medium text-sm" disabled>
+                        <span><span id="cart-item-count">0</span> Productos</span>
+                        <span id="cart-cancel-text" class="text-alegra-green font-semibold">Cancelar</span>
+                    </button>
+                </div>
+            </aside>
+        </main>
+
+        <footer class="flex-shrink-0 h-12 bg-white border-t border-alegra-gray-medium flex justify-between items-center px-4">
+            <div id="sales-tabs-container" class="flex items-center">
+                </div>
+            <div class="w-10 h-10 bg-alegra-dark rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-alegra-dark-light">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-white">
+                      <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"></path><path d="M12 17l0 .01"></path><path d="M12 13.5a1.5 1.5 0 0 1 1 -1.5a2.6 2.6 0 1 0 -3 -4"></path>
+                 </svg>
+            </div>
+        </footer>
+
+    </div>
+
+    <div id="modal-overlay" class="fixed inset-0 bg-black/60 z-40 hidden" onclick="closeActiveModal()"></div>
+
+    <div id="modal-nuevo-cliente" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white w-full max-w-md rounded-lg shadow-xl z-50 hidden">
+        <div class="flex justify-between items-center p-5 border-b border-alegra-gray-medium">
+            <h3 class="text-lg font-bold text-alegra-dark">Crear nuevo cliente</h3>
+            <button onclick="closeModal('modal-nuevo-cliente')" class="text-alegra-gray-dark hover:text-alegra-green">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M18 6l-12 12"></path><path d="M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="p-5 space-y-4">
+            <div>
+                <label class="text-xs font-medium text-alegra-secondary">Nombre o Razón Social</label>
+                <input type="text" class="w-full border border-alegra-border rounded-md px-3 py-2 mt-1 text-sm focus:outline-none focus:border-alegra-green h-[42px]" placeholder="Ej: Juan Pérez">
+            </div>
+            <div>
+                <label class="text-xs font-medium text-alegra-secondary">Identificación (NIT/Cédula)</label>
+                <input type="text" class="w-full border border-alegra-border rounded-md px-3 py-2 mt-1 text-sm focus:outline-none focus:border-alegra-green h-[42px]" placeholder="Ej: 123456789-0">
+            </div>
+            <div>
+                <label class="text-xs font-medium text-alegra-secondary">Teléfono</label>
+                <input type="text" class="w-full border border-alegra-border rounded-md px-3 py-2 mt-1 text-sm focus:outline-none focus:border-alegra-green h-[42px]" placeholder="Ej: 3001234567">
+            </div>
+        </div>
+        <div class="p-5 bg-alegra-gray-light border-t border-alegra-gray-medium rounded-b-lg">
+            <button class="w-full bg-alegra-green text-white font-medium px-4 py-3 rounded-md hover:bg-alegra-green-dark h-[42px]">
+                Guardar Cliente
+            </button>
+        </div>
+    </div>
+
+    <div id="modal-nuevo-producto" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white w-full max-w-md rounded-lg shadow-xl z-50 hidden">
+        <div class="flex justify-between items-center p-5 border-b border-alegra-gray-medium">
+            <h3 class="text-lg font-bold text-alegra-dark">Crear nuevo producto</h3>
+            <button onclick="closeModal('modal-nuevo-producto')" class="text-alegra-gray-dark hover:text-alegra-green">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M18 6l-12 12"></path><path d="M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="p-5 space-y-4">
+            <div>
+                <label class="text-xs font-medium text-alegra-secondary">Nombre del producto</label>
+                <input type="text" class="w-full border border-alegra-border rounded-md px-3 py-2 mt-1 text-sm focus:outline-none focus:border-alegra-green h-[42px]" placeholder="Ej: Conos Pre-enrollados">
+            </div>
+            <div>
+                <label class="text-xs font-medium text-alegra-secondary">Código (SKU / EAN)</label>
+                <input type="text" class="w-full border border-alegra-border rounded-md px-3 py-2 mt-1 text-sm focus:outline-none focus:border-alegra-green h-[42px]" placeholder="Ej: 770123456789">
+            </div>
+            <div>
+                <label class="text-xs font-medium text-alegra-secondary">Precio de venta</label>
+                <input type="number" class="w-full border border-alegra-border rounded-md px-3 py-2 mt-1 text-sm focus:outline-none focus:border-alegra-green h-[42px]" placeholder="Ej: 7000">
+            </div>
+        </div>
+        <div class="p-5 bg-alegra-gray-light border-t border-alegra-gray-medium rounded-b-lg">
+            <button class="w-full bg-alegra-green text-white font-medium px-4 py-3 rounded-md hover:bg-alegra-green-dark h-[42px]">
+                Guardar Producto
+            </button>
+        </div>
+    </div>
+    
+    <div id="modal-finalizar-venta" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white w-full max-w-md rounded-lg shadow-xl z-50 hidden">
+        <div class="flex justify-between items-center p-5 border-b border-alegra-gray-medium">
+            <h3 class="text-lg font-bold text-alegra-dark">Finalizar Venta</h3>
+            <button onclick="closeModal('modal-finalizar-venta')" class="text-alegra-gray-dark hover:text-alegra-green">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M18 6l-12 12"></path><path d="M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+            
+            <div id="payment-details-efectivo" class="payment-details-wrapper space-y-4 hidden">
+                <div>
+                    <label class="text-xs font-medium text-alegra-secondary">Caja (Requerido)</label>
+                    <select id="venta-caja" class="w-full border border-alegra-border rounded-md px-3 py-2 mt-1 text-sm focus:outline-none focus:border-alegra-green h-[42px]">
+                        <option value="">Seleccione una caja...</option>
+                        <option value="caja-menor">Caja Menor</option>
+                        <option value="caja-seguridad">Caja Seguridad</option>
+                        <option value="registradora">Registradora</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="payment-details-transferencia" class="payment-details-wrapper space-y-4 hidden">
+                <div>
+                    <label class="text-xs font-medium text-alegra-secondary">Cuenta de Destino (Requerido)</label>
+                    <select id="venta-cuenta" class="w-full border border-alegra-border rounded-md px-3 py-2 mt-1 text-sm focus:outline-none focus:border-alegra-green h-[42px]">
+                        <option value="">Seleccione una cuenta...</option>
+                        <option value="bancolombia">Bancolombia</option>
+                        <option value="nequi">Nequi</option>
+                        <option value="daviplata">Daviplata</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-alegra-secondary">Número de Comprobante (Requerido)</label>
+                    <input id="venta-comprobante-transferencia" type="text" class="w-full border border-alegra-border rounded-md px-3 py-2 mt-1 text-sm focus:outline-none focus:border-alegra-green h-[42px]" placeholder="Pegue el número aquí...">
+                </div>
+            </div>
+
+            <div id="payment-details-nequi" class="payment-details-wrapper space-y-4 hidden">
+                 <div>
+                    <label class="text-xs font-medium text-alegra-secondary">Cuenta Nequi (Requerido)</label>
+                    <select id="venta-cuenta-nequi" class="w-full border border-alegra-border rounded-md px-3 py-2 mt-1 text-sm focus:outline-none focus:border-alegra-green h-[42px]">
+                        <option value="">Seleccione una cuenta...</option>
+                        <option value="nequi-principal">Nequi Principal</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-alegra-secondary">Número de Comprobante (Requerido)</label>
+                    <input id="venta-comprobante-nequi" type="text" class="w-full border border-alegra-border rounded-md px-3 py-2 mt-1 text-sm focus:outline-none focus:border-alegra-green h-[42px]" placeholder="Pegue el número aquí...">
+                </div>
+            </div>
+
+            <div id="payment-details-tarjeta" class="payment-details-wrapper space-y-4 hidden">
+                <div>
+                    <label class="text-xs font-medium text-alegra-secondary">Datáfono (Requerido)</label>
+                    <select id="venta-datafono" class="w-full border border-alegra-border rounded-md px-3 py-2 mt-1 text-sm focus:outline-none focus:border-alegra-green h-[42px]">
+                        <option value="">Seleccione un datáfono...</option>
+                        <option value="datafono-1">Datáfono 1</option>
+                        <option value="datafono-2">Datáfono 2</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-alegra-secondary">Número de Comprobante (Requerido)</label>
+                    <input id="venta-comprobante-tarjeta" type="text" class="w-full border border-alegra-border rounded-md px-3 py-2 mt-1 text-sm focus:outline-none focus:border-alegra-green h-[42px]" placeholder="Número de aprobación...">
+                </div>
+            </div>
+            
+            <hr class="border-alegra-gray-medium">
+            <div>
+                <label class="text-xs font-medium text-alegra-secondary">Vendedor (Requerido)</label>
+                <select id="venta-vendedor" class="w-full border border-alegra-border rounded-md px-3 py-2 mt-1 text-sm focus:outline-none focus:border-alegra-green h-[42px]">
+                    <option value="">Seleccione un vendedor...</option>
+                    <option value="usuario1">Usuario 1</option>
+                    <option value="usuario2">Usuario 2</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-xs font-medium text-alegra-secondary">Observaciones (Opcional)</label>
+                <textarea id="venta-observaciones" class="w-full border border-alegra-border rounded-md px-3 py-2 mt-1 text-sm focus:outline-none focus:border-alegra-green" rows="3" placeholder="Añadir una nota..."></textarea>
+            </div>
+             <div>
+                <label class="text-xs font-medium text-alegra-secondary">Adjuntar Comprobante (Opcional)</label>
+                <input id="venta-adjunto" type="file" class="w-full text-sm text-alegra-secondary file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-alegra-gray-light file:text-alegra-dark hover:file:bg-alegra-gray-medium">
+            </div>
+        </div>
+        <div class="p-5 bg-alegra-gray-light border-t border-alegra-gray-medium rounded-b-lg">
+            <button id="btn-guardar-pago" class="w-full bg-alegra-green text-white font-medium px-4 py-3 rounded-md hover:bg-alegra-green-dark h-[42px]">
+                Guardar Pago
+            </button>
+        </div>
+    </div>
+    <script>
+            const SCRIPT_URL = '<?= url ?>';
+
+            // ==================================================================
+            // --- BASE DE DATOS SIMULADA DE PRODUCTOS ---
+            // ==================================================================
+            const dbProducts = [
+                { ean: "7701112223334", name: "Anillo Joint Silicona - Holder", price: 7000, stock: 0, category: "Distribuidores" },
+                { ean: "7708204996848", name: "Display Filtros Planos 2 c m x 5 0 - E C O", price: 70001, stock: 3, category: "Librillos" },
+                { ean: "7701112223335", name: "Bandeja Melanina L - Blanca", price: 60000, stock: 0, category: "Distribuidores" },
+                { ean: "7708204996701", name: "Conos Pre Enrollados # 1 2 x 6 - A G", price: 7000, stock: 993, category: "Conos" },
+                // Añadir más productos si es necesario...
+                { ean: "7708204996541", name: "Conos Pre Enrollados # 1 2 x 6 - E C O", price: 7000, stock: 10, category: "Conos" },
+                { ean: "7708204996770", name: "Conos Pre Enrollados # 9 x 8 - A G", price: 6000, stock: 5, category: "Conos" },
+                { ean: "7708204996305", name: "Conos Pre Enrollados # 9 x 8 - E C O", price: 6000, stock: 2, category: "Conos" },
+                { ean: "7701110001112", name: "Bobina de Papel Orgánico 5m", price: 8000, stock: 50, category: "Bobinas" },
+            ];
+        
+             // --- NAVEGACIÓN DEL DASHBOARD ---
+            function handleNavigation(pageId) {
+                console.log('Navegar a:', pageId);
+                
+                // ¡AQUÍ ESTÁ LA MAGIA!
+                // Esto cambia la URL del navegador, añadiendo el parámetro "?page="
+                window.top.location.href = SCRIPT_URL + "?page=" + pageId;
+            }
+
+
+            // --- ESTADO DE LA APLICACIÓN ---
+            let state = {
+                sidebarCollapsed: true, // Inicia colapsado
+                activeSaleId: 1,
+                nextSaleId: 2,
+                sales: [
+                    {
+                        id: 1,
+                        name: "Venta principal",
+                        client: {
+                            id: "GENERICO",
+                            name: "Consumidor final (222222222222)",
+                            type: "final" // <-- "Tipo" (Req. 1)
+                        },
+                        items: [], // { ean, name, price, quantity }
+                        invoiceNumber: "FV",
+                        paymentMethod: null,
+                        currency: "COP", // Default
+                        saleCompleted: false // <-- (Req. 2)
+                    }
+                ],
+                searchMode: 'filter', // 'filter' o 'scan'
+                // ----- MODIFICADO: (Req. 5) -----
+                activeCategories: new Set(), // Antes 'activeCategory: "All"'
+                // ----- FIN MODIFICADO -----
+                products: [], // Aquí se cargarán los productos de la BD
+                categories: [] // Aquí se cargarán las categorías de la BD
+            };
+
+            // --- REFERENCIAS AL DOM ---
+            const appContainer = document.getElementById('app-container');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+            const salesTabsContainer = document.getElementById('sales-tabs-container');
+            
+            // Carrito
+            const cartHeaderControlsContainer = document.getElementById('cart-header-controls');
+            const cartCustomerType = document.getElementById('cart-customer-type');
+            const cartItemsContainer = document.getElementById('cart-items-container');
+            const cartEmptyState = document.getElementById('cart-empty-state');
+            const cartSellButton = document.getElementById('cart-sell-button');
+            const cartTotalDisplay = document.getElementById('cart-total-display');
+            const cartItemCount = document.getElementById('cart-item-count');
+            const cartCancelButton = document.getElementById('cart-cancel-button');
+            const cartCancelText = document.getElementById('cart-cancel-text'); // (Req. 3)
+            const cartTotalsDiv = document.getElementById('cart-totals');
+            const cartSubtotal = document.getElementById('cart-subtotal');
+            const cartIva = document.getElementById('cart-iva');
+            const printerDropdown = document.getElementById('printer-dropdown');
+
+            // Búsqueda Productos
+            const productSearchInput = document.getElementById('product-search-input');
+            const searchModeLupa = document.getElementById('search-mode-lupa');
+            const searchModeScan = document.getElementById('search-mode-scan');
+            const productGrid = document.getElementById('product-grid');
+
+            // Modales
+            const modalFinalizarVenta = document.getElementById('modal-finalizar-venta');
+            const btnGuardarPago = document.getElementById('btn-guardar-pago');
+
+
+            // --- FUNCIONES DE LÓGICA ---
+
+            // --- INICIO: Lógica de Modales ---
+            const modalOverlay = document.getElementById('modal-overlay');
+            let activeModalId = null;
+
+            function openModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (!modal) return;
+                
+                // Lógica específica al abrir modal de VENTA
+                if (modalId === 'modal-finalizar-venta') {
+                    const activeSale = state.sales.find(s => s.id === state.activeSaleId);
+                    // Ocultar todos los wrappers de detalles
+                    modal.querySelectorAll('.payment-details-wrapper').forEach(w => w.classList.add('hidden'));
+                    
+                    // Mostrar el wrapper correcto
+                    // --- MODIFICADO: Añadido caso 'nequi' ---
+                    let paymentMethodKey = activeSale.paymentMethod;
+                    if (paymentMethodKey === 'nequi') {
+                        // Nequi y Transferencia pueden compartir el mismo formulario si se desea
+                        // O tener uno separado. Aquí asumimos que usa el de 'nequi'.
+                        const wrapperNequi = document.getElementById(`payment-details-nequi`);
+                        if (wrapperNequi) {
+                             wrapperNequi.classList.remove('hidden');
+                        } else {
+                            // Fallback al de transferencia si el de nequi no existe
+                            const wrapperTransfer = document.getElementById(`payment-details-transferencia`);
+                            if(wrapperTransfer) wrapperTransfer.classList.remove('hidden');
+                        }
+                    } else {
+                        const wrapperToShow = document.getElementById(`payment-details-${paymentMethodKey}`);
+                        if (wrapperToShow) {
+                            wrapperToShow.classList.remove('hidden');
+                        }
+                    }
+                }
+                
+                modalOverlay.classList.remove('hidden');
+                modal.classList.remove('hidden');
+                activeModalId = modalId;
+            }
+
+            function closeModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (!modal) return;
+
+                modalOverlay.classList.add('hidden');
+                modal.classList.add('hidden');
+                activeModalId = null;
+            }
+            
+            // Cierra el modal activo si se hace clic en el overlay
+            function closeActiveModal() {
+                if (activeModalId) {
+                    closeModal(activeModalId);
+                }
+            }
+            // --- FIN: Lógica de Modales ---
+
+            /**
+             * 1. Lógica del Menú Hamburguesa (Sidebar)
+             */
+            function toggleSidebar() {
+                state.sidebarCollapsed = !state.sidebarCollapsed;
+                if (state.sidebarCollapsed) {
+                    appContainer.classList.add('sidebar-collapsed');
+                } else {
+                    appContainer.classList.remove('sidebar-collapsed');
+                }
+            }
+            
+            // Click fuera del sidebar para cerrarlo
+            document.addEventListener('click', function(event) {
+                if (state.sidebarCollapsed) return; // Si ya está cerrado, no hacer nada
+
+                // Comprobar si el clic fue en el contenido principal (productos o carrito)
+                const mainContent = document.querySelector('main');
+                const isClickInsideMain = mainContent.contains(event.target);
+                const isClickInsideSidebar = sidebar.contains(event.target);
+                const isClickOnToggleBtn = sidebarToggleBtn.contains(event.target);
+
+                if (isClickInsideMain && !isClickInsideSidebar && !isClickOnToggleBtn) {
+                    toggleSidebar();
+                }
+            });
+
+
+            // ==================================================================
+            // --- LÓGICA DEL CARRITO (AÑADIR, QUITAR, ACTUALIZAR) ---
+            // ==================================================================
+
+            /**
+             * Añade un producto al carrito activo usando su EAN.
+             */
+            function addProductToCart(ean) {
+                const activeSale = state.sales.find(s => s.id === state.activeSaleId);
+                if (!activeSale || activeSale.saleCompleted) return; // No añadir si la venta está completada (Req. 2)
+
+                const product = dbProducts.find(p => p.ean === ean);
+                if (!product) {
+                    console.warn(`Producto con EAN ${ean} no encontrado.`);
+                    return;
+                }
+                if (product.stock <= 0) {
+                    console.warn(`Producto ${product.name} está agotado.`);
+                    // Aquí se podría mostrar una alerta visual
+                    return;
+                }
+
+                const existingItem = activeSale.items.find(item => item.ean === ean);
+
+                if (existingItem) {
+                    // Incrementar cantidad
+                    existingItem.quantity++;
+                } else {
+                    // Añadir nuevo item
+                    activeSale.items.push({
+                        ean: product.ean,
+                        name: product.name,
+                        price: product.price,
+                        quantity: 1
+                    });
+                }
+                
+                renderActiveCart();
+            }
+
+            /**
+             * Actualiza la cantidad de un item en el carrito.
+             */
+            function updateCartItemQuantity(ean, newQuantity) {
+                const activeSale = state.sales.find(s => s.id === state.activeSaleId);
+                if (!activeSale || activeSale.saleCompleted) return; // No modificar si la venta está completada (Req. 2)
+
+                const item = activeSale.items.find(item => item.ean === ean);
+                if (!item) return;
+
+                if (newQuantity <= 0) {
+                    // Si la cantidad es 0 o menos, eliminar el item
+                    removeCartItem(ean);
+                } else {
+                    // Aquí se debería validar contra el stock
+                    // const product = dbProducts.find(p => p.ean === ean);
+                    // if (newQuantity > product.stock) { ... }
+                    item.quantity = newQuantity;
+                    renderActiveCart();
+                }
+            }
+
+            /**
+             * Elimina un item del carrito.
+             */
+            function removeCartItem(ean) {
+                const activeSale = state.sales.find(s => s.id === state.activeSaleId);
+                if (!activeSale || activeSale.saleCompleted) return; // No modificar si la venta está completada (Req. 2)
+                
+                activeSale.items = activeSale.items.filter(item => item.ean !== ean);
+                renderActiveCart();
+            }
+
+            /**
+             * ----- MODIFICADO: (Req. 3) -----
+             * Limpia el carrito o resetea la venta completada.
+             */
+            function handleCancelOrReset() {
+                const activeSale = state.sales.find(s => s.id === state.activeSaleId);
+                if (!activeSale) return;
+
+                if (activeSale.saleCompleted) {
+                    // Es "Limpiar" (Req. 3)
+                    activeSale.saleCompleted = false;
+                    activeSale.items = [];
+                    activeSale.paymentMethod = null;
+                    activeSale.currency = "COP";
+                    activeSale.client = { id: "GENERICO", name: "Consumidor final (222222222222)", type: "final" };
+                    activeSale.invoiceNumber = "FV";
+                    
+                    // Limpiar campos del modal de pago por si acaso
+                    modalFinalizarVenta.querySelectorAll('input, select, textarea').forEach(el => {
+                        if(el.type === 'select-one') {
+                            el.selectedIndex = 0;
+                        } else if (el.type !== 'file') {
+                            el.value = '';
+                        }
+                    });
+
+                } else {
+                    // Es "Cancelar"
+                    activeSale.items = [];
+                }
+                renderActiveCart();
+            }
+
+            /**
+             * 3. Lógica de Pestañas de Venta
+             */
+            function addSaleTab() {
+                const newSale = {
+                    id: state.nextSaleId,
+                    name: `Venta ${state.nextSaleId}`,
+                    client: { id: "GENERICO", name: "Consumidor final (222222222222)", type: "final" },
+                    items: [],
+                    invoiceNumber: "FV",
+                    paymentMethod: null,
+                    currency: "COP",
+                    saleCompleted: false
+                };
+                state.sales.push(newSale);
+                state.activeSaleId = state.nextSaleId;
+                state.nextSaleId++;
+                renderSalesTabs();
+                renderActiveCart();
+            }
+
+            function switchSaleTab(saleId) {
+                if (state.activeSaleId === saleId) return; // Ya está activa
+                state.activeSaleId = saleId;
+                renderSalesTabs();
+                renderActiveCart();
+            }
+
+            function closeSaleTab(saleId) {
+                // No permitir cerrar la última pestaña
+                if (state.sales.length <= 1) return; 
+
+                state.sales = state.sales.filter(sale => sale.id !== saleId);
+                
+                // Si cerraste la pestaña activa, activa la primera que quede
+                if (state.activeSaleId === saleId) {
+                    state.activeSaleId = state.sales[0].id;
+                }
+                renderSalesTabs();
+                renderActiveCart();
+            }
+
+            /**
+             * 4. Lógica de Renderizado (Dibujar la UI según el estado)
+             */
+            function renderSalesTabs() {
+                salesTabsContainer.innerHTML = ''; // Limpiar pestañas
+                
+                state.sales.forEach(sale => {
+                    const isActive = sale.id === state.activeSaleId;
+                    const activeClass = isActive 
+                        ? 'border-b-2 border-alegra-green text-alegra-green' 
+                        : 'text-alegra-gray-dark hover:text-alegra-green';
+                    
+                    const tab = document.createElement('div');
+                    tab.className = `flex items-center h-12 px-4 cursor-pointer ${activeClass}`;
+                    tab.onclick = () => switchSaleTab(sale.id);
+                    
+                    tab.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2">
+                            <path d="M10 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path><path d="M5.001 8h13.999a2 2 0 0 1 1.977 2.304l-1.255 7.152a3 3 0 0 1 -2.966 2.544h-9.512a3 3 0 0 1 -2.965 -2.544l-1.255 -7.152a2 2 0 0 1 1.977 -2.304z"></path><path d="M17 10l-2 -6"></path><path d="M7 10l2 -6"></path>
+                        </svg>
+                        <span class="text-sm font-medium whitespace-nowrap">${sale.name}</span>
+                        ${state.sales.length > 1 ? 
+                            `<button onclick="event.stopPropagation(); closeSaleTab(${sale.id})" class="ml-2 text-alegra-tertiary hover:text-red-500 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M18 6l-12 12"></path><path d="M6 6l12 12"></path></svg>
+                             </button>` 
+                             : ''}
+                    `;
+                    salesTabsContainer.appendChild(tab);
+                });
+
+                // Añadir el botón "+" al final
+                const addBtnContainer = document.createElement('div');
+                addBtnContainer.innerHTML = `
+                    <button id="add-sale-tab-btn" class="text-alegra-gray-dark hover:text-alegra-green p-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                            <path d="M12 5l0 14"></path><path d="M5 12l14 0"></path>
+                        </svg>
+                    </button>
+                `;
+                const newAddBtn = addBtnContainer.firstElementChild;
+                newAddBtn.onclick = addSaleTab;
+                salesTabsContainer.appendChild(newAddBtn);
+            }
+
+            /**
+             * Renderiza la lista de items en el carrito.
+             */
+            function renderCartItems() {
+                const activeSale = state.sales.find(s => s.id === state.activeSaleId);
+                const isCompleted = activeSale.saleCompleted; // (Req. 2)
+                cartItemsContainer.innerHTML = ''; // Limpiar items
+
+                if (activeSale.items.length === 0) {
+                    cartItemsContainer.appendChild(cartEmptyState); // Mostrar estado vacío
+                    cartTotalsDiv.classList.add('hidden'); // Ocultar totales
+                } else {
+                    cartTotalsDiv.classList.remove('hidden'); // Mostrar totales
+                    activeSale.items.forEach(item => {
+                        const itemEl = document.createElement('div');
+                        itemEl.className = 'cart-item';
+                        itemEl.innerHTML = `
+                            <div class="cart-item-details">
+                                <p class="cart-item-name" title="${item.name}">${item.name}</p>
+                                <div class="cart-item-meta">
+                                    <span>${item.ean}</span>
+                                    <span>@ ${formatCurrency(item.price)}</span>
+                                </div>
+                            </div>
+                            <div class="cart-item-quantity-controls">
+                                <button class="btn-qty-minus" data-ean="${item.ean}" ${isCompleted ? 'disabled' : ''}>-</button>
+                                <input type="number" class="input-qty" data-ean="${item.ean}" value="${item.quantity}" min="0" ${isCompleted ? 'disabled' : ''}>
+                                <button class="btn-qty-plus" data-ean="${item.ean}" ${isCompleted ? 'disabled' : ''}>+</button>
+                            </div>
+                            <div class="cart-item-total">${formatCurrency(item.price * item.quantity)}</div>
+                        `;
+                        cartItemsContainer.appendChild(itemEl);
+                    });
+
+                    // Añadir listeners a los nuevos botones
+                    cartItemsContainer.querySelectorAll('.btn-qty-minus').forEach(btn => {
+                        btn.onclick = () => updateCartItemQuantity(btn.dataset.ean, parseInt(btn.nextElementSibling.value) - 1);
+                    });
+                    cartItemsContainer.querySelectorAll('.btn-qty-plus').forEach(btn => {
+                        btn.onclick = () => updateCartItemQuantity(btn.dataset.ean, parseInt(btn.previousElementSibling.value) + 1);
+                    });
+                    cartItemsContainer.querySelectorAll('.input-qty').forEach(input => {
+                        input.onchange = () => updateCartItemQuantity(input.dataset.ean, parseInt(input.value));
+                    });
+                }
+            }
+
+            /**
+             * ----- MODIFICADO: (Req. 2 y 3) -----
+             * Renderiza todo el carrito, incluyendo el estado de bloqueo.
+             */
+            function renderActiveCart() {
+                const activeSale = state.sales.find(s => s.id === state.activeSaleId);
+                if (!activeSale) {
+                    console.error("No se encontró la venta activa:", state.activeSaleId);
+                    return;
+                }
+
+                const isCompleted = activeSale.saleCompleted;
+                const hasItems = activeSale.items.length > 0;
+
+                // 1. Rellenar cabecera del carrito
+                cartCustomerType.value = activeSale.client.type;
+                
+                const numeracionDropdown = document.getElementById('dropdown-numeracion');
+                const numeracionDisplay = numeracionDropdown.querySelector('.dropdown-display span'); // Target el span
+                const selectedNumeracionLi = numeracionDropdown.querySelector(`ul li[data-value="${activeSale.invoiceNumber}"]`);
+                
+                if (numeracionDisplay && selectedNumeracionLi) {
+                    numeracionDisplay.innerHTML = selectedNumeracionLi.innerHTML; // Pone el HTML de <li> en el <span>
+                    numeracionDropdown.querySelector('ul li.selected')?.classList.remove('selected');
+                    selectedNumeracionLi.classList.add('selected');
+                } else if (numeracionDisplay) {
+                    numeracionDisplay.innerHTML = `<b>${activeSale.invoiceNumber}</b>`;
+                }
+
+                // Actualizar el dropdown de cliente
+                const clienteDropdown = document.getElementById('dropdown-cliente');
+                const clienteInput = clienteDropdown.querySelector('input');
+                const clienteList = clienteDropdown.querySelector('ul');
+                clienteInput.value = activeSale.client.name;
+                clienteInput.dataset.value = activeSale.client.id;
+                clienteList.querySelectorAll('li').forEach(li => {
+                    li.classList.toggle('selected', li.dataset.value === activeSale.client.id);
+                });
+
+                // Sincronizar dropdown de Moneda y Método de Pago
+                document.querySelectorAll('#dropdown-moneda li, #dropdown-metodo-pago li').forEach(li => li.classList.remove('selected'));
+                if (activeSale.currency) {
+                    document.querySelector(`#dropdown-moneda li[data-value="${activeSale.currency}"]`)?.classList.add('selected');
+                }
+                if (activeSale.paymentMethod) {
+                    document.querySelector(`#dropdown-metodo-pago li[data-value="${activeSale.paymentMethod}"]`)?.classList.add('selected');
+                }
+
+
+                // 2. Rellenar items del carrito
+                renderCartItems(); // Esta función ahora también respeta 'isCompleted'
+
+                // 3. Rellenar footer del carrito
+                const subtotal = activeSale.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                const iva = subtotal * 0.19;
+                const total = subtotal + iva;
+                const itemCount = activeSale.items.reduce((sum, item) => sum + item.quantity, 0);
+
+                cartSubtotal.textContent = formatCurrency(subtotal);
+                cartIva.textContent = formatCurrency(iva);
+                cartTotalDisplay.textContent = formatCurrency(total);
+                cartItemCount.textContent = itemCount;
+
+                // 4. Lógica de Bloqueo (Req. 2)
+                const controlsToLock = [
+                    cartCustomerType,
+                    document.getElementById('dropdown-numeracion'),
+                    document.getElementById('dropdown-cliente'),
+                    document.getElementById('dropdown-moneda'),
+                    document.getElementById('dropdown-metodo-pago'),
+                    cartHeaderControlsContainer.querySelector('button') // Botón de nuevo cliente
+                ];
+                
+                controlsToLock.forEach(el => {
+                    if (el) {
+                        el.style.pointerEvents = isCompleted ? 'none' : '';
+                        el.style.opacity = isCompleted ? 0.6 : 1;
+                        if(el.tagName === 'SELECT' || el.tagName === 'BUTTON' || el.tagName === 'INPUT') {
+                            el.disabled = isCompleted;
+                        }
+                    }
+                });
+                cartItemsContainer.style.opacity = isCompleted ? 0.6 : 1;
+                cartItemsContainer.style.pointerEvents = isCompleted ? 'none' : '';
+
+                // 5. Habilitar/deshabilitar botones de pie de página
+                cartCancelButton.disabled = !hasItems && !isCompleted; // Se puede "Limpiar" aunque no haya items
+                cartCancelButton.className = (hasItems || isCompleted)
+                    ? 'w-full bg-transparent text-alegra-secondary rounded-md h-12 flex justify-between items-center px-5 font-medium text-sm hover:bg-gray-100'
+                    : 'w-full bg-transparent text-alegra-secondary rounded-md h-12 flex justify-between items-center px-5 font-medium text-sm';
+                
+                // 6. Actualizar texto de botones (Req. 3)
+                cartCancelText.textContent = isCompleted ? 'Limpiar' : 'Cancelar';
+                
+                // 7. Actualizar estado del botón Vender (Req. 2)
+                if (isCompleted) {
+                    cartSellButton.disabled = true;
+                    cartSellButton.className = 'w-full bg-gray-400 text-white rounded-md h-14 flex justify-between items-center px-5 font-bold text-lg';
+                    cartSellButton.querySelector('span:first-child').textContent = 'Venta Completada';
+                } else {
+                    cartSellButton.querySelector('span:first-child').textContent = 'Vender';
+                    checkVenderButtonState(); // Solo chequear si no está completada
+                }
+                
+                // 8. Actualizar estado de la impresora (Req. 2)
+                if (isCompleted) {
+                    printerDropdown.classList.remove('printer-disabled');
+                } else {
+                    printerDropdown.classList.add('printer-disabled');
+                }
+            }
+
+            /**
+             * 5. Lógica de Búsqueda de Productos
+             */
+            // --- INICIO: (Req. 5) Nueva Función handleCategoryClick ---
+            function handleCategoryClick(categoryName) {
+                const item = document.querySelector(`.category-item[data-category-name="${categoryName}"]`);
+                if (!item) return;
+
+                const wasActive = state.activeCategories.has(categoryName);
+                
+                if (wasActive) {
+                    state.activeCategories.delete(categoryName);
+                } else {
+                    state.activeCategories.add(categoryName);
+                }
+                
+                const isActive = !wasActive;
+
+                // Actualizar UI del botón clickeado
+                item.classList.toggle('active', isActive);
+                item.classList.toggle('bg-alegra-green-light/10', isActive);
+                
+                const text = item.querySelector('.category-text');
+                if (text) {
+                    text.classList.toggle('font-semibold', isActive);
+                    text.classList.toggle('text-alegra-green', isActive);
+                    text.classList.toggle('font-medium', !isActive);
+                    text.classList.toggle('text-alegra-dark', !isActive);
+                }
+
+                const icon = item.querySelector('.category-icon');
+                if (icon) {
+                    icon.classList.toggle('border-alegra-green', isActive);
+                    icon.classList.toggle('border-2', isActive);
+                    icon.classList.toggle('border', !isActive);
+                    icon.classList.toggle('border-alegra-border', !isActive);
+                }
+
+                // Re-filtrar productos
+                filterProducts();
+            }
+            // --- FIN: Nueva Función ---
+
+            function setSearchMode(mode) {
+                state.searchMode = mode;
+                if (mode === 'scan') {
+                    searchModeLupa.classList.remove('text-alegra-green');
+                    searchModeLupa.classList.add('text-alegra-gray-dark', 'hover:text-alegra-green');
+                    searchModeScan.classList.add('text-alegra-green');
+                    searchModeScan.classList.remove('text-alegra-gray-dark', 'hover:text-alegra-green');
+                    productSearchInput.placeholder = "Escanear código y presionar Enter...";
+                    productSearchInput.value = '';
+                    productSearchInput.focus();
+                    filterProducts(); // Limpiar filtro de nombre
+                } else { // 'filter'
+                    searchModeScan.classList.remove('text-alegra-green');
+                    searchModeScan.classList.add('text-alegra-gray-dark', 'hover:text-alegra-green');
+                    searchModeLupa.classList.add('text-alegra-green');
+                    searchModeLupa.classList.remove('text-alegra-gray-dark', 'hover:text-alegra-green');
+                    productSearchInput.placeholder = "Buscar productos por nombre...";
+                }
+                filterProducts(); // ----- AÑADIDO: Volver a filtrar al cambiar de modo -----
+            }
+
+            function filterProducts() {
+                // ----- MODIFICADO: (Req. 5) -----
+                const searchTerm = productSearchInput.value.toLowerCase();
+                const activeCategories = state.activeCategories; // Es un Set
+                const allProductCards = productGrid.querySelectorAll('.product-card');
+
+                allProductCards.forEach(card => {
+                    const name = card.dataset.name.toLowerCase();
+                    const ean = card.dataset.ean.toLowerCase();
+                    const cardCategory = card.dataset.category; // Leer la categoría del producto
+
+                    // El 'nameMatch' solo se aplica si el modo es 'filter'
+                    const nameMatch = state.searchMode === 'scan' || (name.includes(searchTerm) || ean.includes(searchTerm));
+                    
+                    // El 'categoryMatch' ahora usa el Set
+                    const categoryMatch = (activeCategories.size === 0 || activeCategories.has(cardCategory));
+
+                    if (nameMatch && categoryMatch) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+                // ----- FIN MODIFICADO -----
+            }
+
+            function handleSearchEnter(event) {
+                if (event.key === 'Enter') {
+                    if (state.searchMode === 'scan') {
+                        const ean = productSearchInput.value.trim();
+                        if (ean) {
+                            console.log(`Modo Scan: Buscando producto con EAN ${ean} y añadiendo al carrito.`);
+                            addProductToCart(ean); // <-- Lógica de añadir al carrito
+                            productSearchInput.value = ''; // Limpiar para el siguiente scan
+                            productSearchInput.focus();
+                        }
+                    }
+                }
+            }
+            
+            /**
+             * 6. Lógica de Impresión
+             */
+            function printTicket() {
+                // Lógica para generar e imprimir el tiquete
+                console.log("Generando tiquete para imprimir...");
+                // window.print(); // Esto imprimiría toda la página, se necesita una lógica más avanzada
+            }
+
+            // --- INICIO: (Req. 4) Función de Fallback de Imagen ---
+            /**
+             * Reemplaza una imagen de categoría rota por un ícono con la inicial.
+             */
+            function handleCategoryImgError(imgElement, categoryName) {
+                const iconContainer = imgElement.parentElement;
+                if (!iconContainer) return;
+
+                const initial = categoryName.charAt(0) ? categoryName.charAt(0).toUpperCase() : '?';
+                
+                // Limpiar el img roto
+                iconContainer.innerHTML = ''; 
+                
+                // Añadir clases para el estilo de fallback (letra)
+                // Usamos las clases base de los otros iconos de letras
+                
+                // Re-aplicar clases base que se pudieron perder
+                iconContainer.classList.add('category-icon', 'w-12', 'h-12', 'rounded-lg', 'border', 'flex', 'items-center', 'justify-center', 'text-xl', 'font-bold');
+                
+                // Aplicar clases de fallback
+                iconContainer.classList.add('bg-green-500', 'text-white', 'border-alegra-border');
+                
+                // Quitar clases de imagen
+                iconContainer.classList.remove('overflow-hidden');
+                
+                // Asegurarse de que las clases 'active' no se apliquen al contenedor de fallback
+                const parentItem = iconContainer.closest('.category-item');
+                if (parentItem && !parentItem.classList.contains('active')) {
+                     iconContainer.classList.remove('border-alegra-green', 'border-2');
+                }
+                
+                iconContainer.textContent = initial;
+            }
+            // --- FIN: Función ---
+
+            // ==================================================================
+            // --- LÓGICA DE VENTA Y VALIDACIÓN ---
+            // ==================================================================
+            
+            /**
+             * Limpia todas las advertencias de error de los inputs.
+             */
+            function clearValidationErrors() {
+                document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+                document.querySelectorAll('.shake').forEach(el => el.classList.remove('shake'));
+            }
+            
+            /**
+             * Muestra errores de validación en los campos del carrito.
+             */
+            function showCartValidationErrors(errors) {
+                clearValidationErrors();
+                
+                errors.forEach(fieldId => {
+                    let el;
+                    // Los dropdowns de icono no tienen ID, usamos el wrapper
+                    if (fieldId === 'dropdown-metodo-pago' || fieldId === 'dropdown-moneda') {
+                        el = document.getElementById(fieldId).querySelector('button');
+                    } else if (fieldId === 'dropdown-numeracion') {
+                        el = document.getElementById(fieldId).querySelector('.dropdown-display');
+                    } else if (fieldId === 'dropdown-cliente') {
+                        el = document.getElementById(fieldId).querySelector('.dropdown-display-input');
+                    } else {
+                        el = document.getElementById(fieldId);
+                    }
+                    
+                    if (el) {
+                         // Para los dropdowns, queremos marcar el contenedor padre
+                        const errorTarget = el.closest('.dropdown-wrapper, select');
+                        if (errorTarget) {
+                            errorTarget.classList.add('input-error', 'shake');
+                            setTimeout(() => errorTarget.classList.remove('shake'), 500);
+                        } else {
+                             el.classList.add('input-error', 'shake');
+                             setTimeout(() => el.classList.remove('shake'), 500);
+                        }
+                    }
+                });
+            }
+            
+            /**
+             * ----- MODIFICADO: (Req. 1) -----
+             * Comprueba si el botón "Vender" debe estar activo.
+             */
+            function checkVenderButtonState() {
+                const activeSale = state.sales.find(s => s.id === state.activeSaleId);
+                if (!activeSale || activeSale.saleCompleted) return; // No chequear si está completada (Req. 2)
+                
+                const conditions = {
+                    hasItems: activeSale.items.length > 0,
+                    hasClient: activeSale.client.id !== null && activeSale.client.id !== "GENERICO", // Asumiendo que GENERICO no es un cliente válido
+                    hasClientType: activeSale.client.type !== null && activeSale.client.type !== "",
+                    hasPaymentMethod: activeSale.paymentMethod !== null,
+                    hasCurrency: activeSale.currency !== null,
+                    hasInvoiceNumber: activeSale.invoiceNumber !== null
+                };
+                
+                const isValid = Object.values(conditions).every(Boolean);
+                
+                if (isValid) {
+                    cartSellButton.disabled = false;
+                    cartSellButton.className = 'w-full bg-alegra-green text-white rounded-md h-14 flex justify-between items-center px-5 font-bold text-lg hover:bg-alegra-green-dark transition-all duration-300';
+                    clearValidationErrors(); // Limpiar errores si todo está bien
+                } else {
+                    cartSellButton.disabled = true;
+                    cartSellButton.className = 'w-full bg-gray-200 text-gray-500 rounded-md h-14 flex justify-between items-center px-5 font-bold text-lg transition-all duration-300';
+                }
+                
+                return conditions;
+            }
+            
+            /**
+             * ----- MODIFICADO: (Req. 1) -----
+             * Maneja el clic en el botón "Vender".
+             */
+            function handleVenderClick() {
+                const conditions = checkVenderButtonState();
+                
+                if (cartSellButton.disabled) {
+                    const errors = [];
+                    // (Req. 1) Validar todo
+                    if (!conditions.hasClient) errors.push('dropdown-cliente');
+                    if (!conditions.hasClientType) errors.push('cart-customer-type');
+                    if (!conditions.hasPaymentMethod) errors.push('dropdown-metodo-pago');
+                    if (!conditions.hasCurrency) errors.push('dropdown-moneda');
+                    if (!conditions.hasInvoiceNumber) errors.push('dropdown-numeracion');
+                    // Podríamos añadir una advertencia si no hay items, pero el botón ya estaría deshabilitado...
+                    
+                    showCartValidationErrors(errors);
+                } else {
+                    // ¡Éxito! Abrir el modal de finalizar venta
+                    openModal('modal-finalizar-venta');
+                }
+            }
+            
+            /**
+             * ----- MODIFICADO: (Req. 2) -----
+             * Valida y guarda el pago desde el modal.
+             */
+            function handleFinalizarVenta() {
+                const activeSale = state.sales.find(s => s.id === state.activeSaleId);
+                const method = activeSale.paymentMethod;
+                
+                let isValid = true;
+                const errors = [];
+                
+                // Validar campos comunes
+                const vendedor = document.getElementById('venta-vendedor');
+                if (!vendedor.value) {
+                    isValid = false;
+                    errors.push('venta-vendedor');
+                }
+                
+                // Validar campos específicos del método
+                if (method === 'efectivo') {
+                    const caja = document.getElementById('venta-caja');
+                    if (!caja.value) {
+                        isValid = false;
+                        errors.push('venta-caja');
+                    }
+                } else if (method === 'transferencia') {
+                    const cuenta = document.getElementById('venta-cuenta');
+                    const comprobante = document.getElementById('venta-comprobante-transferencia');
+                    if (!cuenta.value) {
+                        isValid = false;
+                        errors.push('venta-cuenta');
+                    }
+                    if (!comprobante.value) {
+                        isValid = false;
+                        errors.push('venta-comprobante-transferencia');
+                    }
+                } else if (method === 'nequi') {
+                    // Validar campos de Nequi
+                    const cuentaNequi = document.getElementById('venta-cuenta-nequi');
+                    const comprobanteNequi = document.getElementById('venta-comprobante-nequi');
+                    if (!cuentaNequi.value) {
+                        isValid = false;
+                        errors.push('venta-cuenta-nequi');
+                    }
+                    if (!comprobanteNequi.value) {
+                        isValid = false;
+                        errors.push('venta-comprobante-nequi');
+                    }
+                } else if (method === 'tarjeta') {
+                    const datafono = document.getElementById('venta-datafono');
+                    const comprobante = document.getElementById('venta-comprobante-tarjeta');
+                    if (!datafono.value) {
+                        isValid = false;
+                        errors.push('venta-datafono');
+                    }
+                    if (!comprobante.value) {
+                        isValid = false;
+                        errors.push('venta-comprobante-tarjeta');
+                    }
+                }
+                
+                // Limpiar errores antiguos del modal
+                modalFinalizarVenta.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error', 'shake'));
+
+                if (!isValid) {
+                    // Mostrar errores DENTRO del modal
+                    errors.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.classList.add('input-error', 'shake');
+                            setTimeout(() => el.classList.remove('shake'), 500);
+                        }
+                    });
+                    console.warn("Faltan campos en el modal de pago.");
+                    return;
+                }
+                
+                // --- ¡VENTA EXITOSA! ---
+                console.log("¡Venta guardada!", {
+                    ...activeSale,
+                    vendedor: vendedor.value,
+                    // ...otros campos del modal
+                });
+                
+                // ----- MODIFICADO: (Req. 2) -----
+                // Marcar como completada y NO resetear.
+                activeSale.saleCompleted = true;
+                
+                // Cerrar modal y renderizar
+                closeModal('modal-finalizar-venta');
+                renderActiveCart(); // Esto activará la impresora y bloqueará el carrito
+            }
+
+
+            /**
+             * 7. Lógica de Menús Desplegables
+             */
+            function initializeDropdowns() {
+                // Cerrar todos los menús si se hace clic fuera
+                document.addEventListener('click', (e) => {
+                    // Cerrar menús de texto/icono
+                    document.querySelectorAll('.dropdown-wrapper.open').forEach(dropdown => {
+                        if (!dropdown.contains(e.target)) {
+                            dropdown.classList.remove('open');
+                        }
+                    });
+                });
+
+                // Inicializar menús estándar (no filtrables)
+                document.querySelectorAll('.dropdown-wrapper:not(#dropdown-cliente)').forEach(wrapper => {
+                    const display = wrapper.querySelector('.dropdown-display, .dropdown-toggle-icon');
+                    const list = wrapper.querySelector('ul');
+                    
+                    if (!display || !list) return; // Seguridad
+
+                    display.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Evitar que el 'click outside' lo cierre
+
+                        // No abrir si está deshabilitado (Req. 2)
+                        const activeSale = state.sales.find(s => s.id === state.activeSaleId);
+                        if (activeSale.saleCompleted) return;
+
+                        // Cerrar otros menús
+                        document.querySelectorAll('.dropdown-wrapper.open').forEach(d => {
+                            if (d !== wrapper) d.classList.remove('open');
+                        });
+                        // Abrir/cerrar este
+                        wrapper.classList.toggle('open');
+                    });
+
+                    list.querySelectorAll('li').forEach(li => {
+                        li.addEventListener('click', () => {
+                            list.querySelector('li.selected')?.classList.remove('selected');
+                            li.classList.add('selected');
+                            
+                            // Solo actualiza el display si es un dropdown de texto
+                            const textDisplay = wrapper.querySelector('.dropdown-display span');
+                            if(textDisplay) {
+                                 textDisplay.innerHTML = li.innerHTML;
+                            }
+                            
+                            wrapper.classList.remove('open');
+                            
+                            // Lógica específica
+                            const value = li.dataset.value;
+                            const activeSale = state.sales.find(s => s.id === state.activeSaleId);
+                            
+                            if (wrapper.id === 'dropdown-numeracion') {
+                                activeSale.invoiceNumber = value;
+                            } else if (wrapper.id === 'dropdown-moneda') {
+                                activeSale.currency = value;
+                            } else if (wrapper.id === 'dropdown-metodo-pago') {
+                                activeSale.paymentMethod = value;
+                            } else if (wrapper.id === 'printer-dropdown') {
+                                console.log(`Imprimir: ${value}`);
+                                // Aquí iría la lógica de impresión
+                            }
+                            
+                            checkVenderButtonState(); // Comprobar estado al cambiar
+                        });
+                    });
+                });
+
+                // Inicializar menú filtrable de Cliente
+                const clienteWrapper = document.getElementById('dropdown-cliente');
+                const clienteInput = clienteWrapper.querySelector('input');
+                const clienteList = clienteWrapper.querySelector('ul');
+                const allClienteItems = clienteList.querySelectorAll('li');
+
+                // Abrir al hacer clic en el input o en el div relativo
+                clienteWrapper.querySelector('.relative').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    
+                    // No abrir si está deshabilitado (Req. 2)
+                    const activeSale = state.sales.find(s => s.id === state.activeSaleId);
+                    if (activeSale.saleCompleted) return;
+                    
+                    if (!clienteWrapper.classList.contains('open')) {
+                        // Cerrar otros menús antes de abrir este
+                        document.querySelectorAll('.dropdown-wrapper.open').forEach(d => {
+                            if (d !== clienteWrapper) d.classList.remove('open');
+                        });
+                        clienteWrapper.classList.add('open');
+                        clienteInput.focus();
+                    }
+                });
+
+                clienteInput.addEventListener('keyup', () => {
+                    const filter = clienteInput.value.toLowerCase();
+                    allClienteItems.forEach(li => {
+                        const text = li.textContent.toLowerCase();
+                        li.style.display = text.includes(filter) ? '' : 'none';
+                    });
+                });
+
+                allClienteItems.forEach(li => {
+                    li.addEventListener('click', () => {
+                        allClienteItems.forEach(i => i.classList.remove('selected'));
+                        li.classList.add('selected');
+                        
+                        const selectedName = li.textContent.trim();
+                        const selectedId = li.dataset.value;
+
+                        clienteInput.value = selectedName;
+                        clienteInput.dataset.value = selectedId;
+                        
+                        // Actualizar estado
+                        const activeSale = state.sales.find(s => s.id === state.activeSaleId);
+                        activeSale.client.id = selectedId;
+                        activeSale.client.name = selectedName;
+                        // (Aquí también se debería actualizar el activeSale.client.type basado en el cliente)
+                        
+                        clienteWrapper.classList.remove('open');
+                        checkVenderButtonState(); // Comprobar estado al cambiar
+                    });
+                });
+            }
+
+
+            /**
+             * 8. Lógica de Carga de Datos (Al iniciar)
+             */
+            function initializePOS() {
+                // Conectar botones
+                sidebarToggleBtn.onclick = toggleSidebar;
+                searchModeLupa.onclick = () => setSearchMode('filter');
+                searchModeScan.onclick = () => setSearchMode('scan');
+                productSearchInput.addEventListener('input', filterProducts);
+                productSearchInput.addEventListener('keypress', handleSearchEnter);
+                
+                // ----- MODIFICADO: (Req. 3) -----
+                cartCancelButton.onclick = handleCancelOrReset;
+                // ----- FIN MODIFICADO -----
+                
+                cartSellButton.onclick = handleVenderClick;
+                btnGuardarPago.onclick = handleFinalizarVenta;
+
+                // ----- INICIO: (Req. 5) Añadir listeners a botones de categoría -----
+                document.querySelectorAll('.category-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        handleCategoryClick(item.dataset.categoryName);
+                    });
+                });
+                // ----- FIN: Añadir listeners -----
+                
+                // ----- INICIO: Añadir listeners a tarjetas de producto -----
+                productGrid.querySelectorAll('.product-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        // No añadir si está agotado (opacity-50)
+                        if (!card.classList.contains('opacity-50')) {
+                            addProductToCart(card.dataset.ean);
+                        }
+                    });
+                });
+                // ----- FIN: Añadir listeners -----
+
+                // Renderizado inicial
+                renderSalesTabs(); // Esto crea el primer addSaleTabBtn
+                renderActiveCart();
+                filterProducts(); // ----- AÑADIDO: Aplicar filtro inicial (Todos) -----
+                
+                // Inicializar todos los menús desplegables
+                initializeDropdowns();
+                
+                // ----- INICIO: (Req. 1) Añadir listeners a los campos de validación -----
+                cartCustomerType.onchange = () => {
+                    const activeSale = state.sales.find(s => s.id === state.activeSaleId);
+                    if (activeSale) {
+                        activeSale.client.type = cartCustomerType.value;
+                    }
+                    checkVenderButtonState();
+                };
+                // ----- FIN: Añadir listeners -----
+                
+                // Comprobar si volvemos de crear un cliente o producto
+                checkReturnNavigation();
+            }
+
+            function checkReturnNavigation() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const newClientId = urlParams.get('new_client_id');
+                const newProductSku = urlParams.get('new_product_sku');
+
+                if (newClientId) {
+                    console.log("Cargando nuevo cliente:", newClientId);
+                    // Aquí llamarías a una función para cargar los datos de ese cliente
+                    // y ponerlos en el carrito activo
+                    // loadClientToCart(newClientId); 
+                }
+
+                if (newProductSku) {
+                    console.log("Cargando nuevo producto:", newProductSku);
+                    // Aquí llamarías a una función para cargar ese producto
+                    // y añadirlo al carrito activo
+                    // loadProductToCart(newProductSku);
+                }
+            }
+            
+            // --- FUNCIONES DE FORMATO ---
+            function formatCurrency(value) {
+                const numberValue = parseFloat(value) || 0;
+                return new Intl.NumberFormat('es-CO', {
+                    style: 'currency',
+                    currency: 'COP',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                }).format(numberValue);
+            }
+
+            // --- INICIALIZACIÓN ---
+            // Esperar a que el DOM esté listo
+            document.addEventListener('DOMContentLoaded', initializePOS);
+
+    </script>
+</body>
+</html>

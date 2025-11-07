@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Pedidos</title>
+    <!-- Incluyendo Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Incluyendo Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Iconos de Heroicons -->
+    <script type_model="module" src="https://unpkg.com/heroicons@2.1.1/24/outline/index.js"></script>
+
+    <style>
+        /* Estilo base con la fuente Inter */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Ocultar vistas por defecto */
+        .view {
+            display: none;
+        }
+        /* Mostrar la vista activa */
+        .view.active {
+            display: block;
+        }
+        /* Estilos para el modal */
+        #view-modal {
+            display: none; /* Oculto por defecto */
+        }
+        #view-modal.active {
+            display: flex; /* Mostrar como flex para centrar */
+        }
+        /* Estilos para el nuevo menú de acciones */
+        .action-menu {
+            display: none; /* Oculto por defecto */
+        }
+        .action-menu.active {
+            display: block; /* Mostrar */
+        }
+    </style>
+</head>
+<body class="bg-blue-600 p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+
+        <!-- =================================================================== -->
+        <!-- VISTA 1: LISTA DE PEDIDOS (Imagen 1)                                -->
+        <!-- =================================================================== -->
+        <div id="view-list" class="view active">
+            <!-- Encabezado (MODIFICADO: Estilo de PRODUCTOS.html) -->
+            <div class="w-full flex justify-between items-center pt-4 pb-6 mb-4">
+                <!-- Izquierda: Logo + Título + Botón Añadir -->
+                <div class="flex items-center gap-4">
+                    <!-- MODIFICADO: Logo clicable y con estilos hover -->
+                    <img data-src-key="logo" alt="Logo" class="h-10 w-auto cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-95" onclick="handleNavigation('INDEX')">
+                    
+                    <div class="flex items-center gap-3">
+                        <h1 class="text-3xl font-bold text-white">Pedidos</h1>
+                        <!-- Botón "Añadir pedido" (se mantiene) -->
+                        <button class="flex items-center gap-1 px-4 py-1 bg-green-500 text-white rounded-md shadow-sm hover:bg-green-600 text-sm border-transparent">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            Añadir pedido
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- MODIFICADO: Botón Volver (Ahora visible, quitada la clase 'hidden') -->
+                <button
+                  onclick="handleNavigation('INDEX')"
+                  type="button"
+                  style="font-family: 'Inter', sans-serif;"
+                  class="bg-white text-center w-48 rounded-2xl h-14 relative text-blue-700 text-xl font-semibold border-4 border-white group shadow-md"
+                >
+                  <div
+                    class="bg-blue-600 rounded-xl h-12 w-1/4 grid place-items-center absolute left-0 top-0 group-hover:w-full z-10 duration-500"
+                  >
+                    <svg class="w-6 h-6" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                      <path fill="#FFFFFF" d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z"></path>
+                      <path fill="#FFFFFF" d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z"></path>
+                    </svg>
+                  </div>
+                  <p class="translate-x-4 transition-transform duration-500 group-hover:translate-x-0">Volver</p> 
+                </button>
+            </div>
+
+            <!-- Filtros de estado (Colores de texto ajustados) -->
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4 text-sm">
+                <a href="#" class="filter-link text-white font-semibold underline" onclick="filterOrders(event, 'Todos')">Todos (5)</a>
+                <span class="text-blue-300">|</span>
+                <a href="#" class="filter-link text-blue-200 hover:text-white hover:underline" onclick="filterOrders(event, 'Pendiente de pago')">Pendiente de pago (1)</a>
+                <span class="text-blue-300">|</span>
+                <a href="#" class="filter-link text-blue-200 hover:text-white hover:underline" onclick="filterOrders(event, 'Procesando')">Procesando (1)</a>
+                <span class="text-blue-300">|</span>
+                <a href="#" class="filter-link text-blue-200 hover:text-white hover:underline" onclick="filterOrders(event, 'Completado')">Completado (1)</a>
+                <span class="text-blue-300">|</span>
+                <a href="#" class="filter-link text-blue-200 hover:text-white hover:underline" onclick="filterOrders(event, 'Cancelado')">Cancelado (1)</a>
+                <span class="text-blue-300">|</span>
+                <a href="#" class="filter-link text-blue-200 hover:text-white hover:underline" onclick="filterOrders(event, 'Reembolsado')">Reembolsado (1)</a>
+            </div>
+            
+            <!-- Acciones en lote, filtros y búsqueda (MODIFICADO: Alineación) -->
+            <div class="flex flex-wrap items-center gap-4 mb-4 p-4 bg-white rounded-lg shadow-sm border">
+                
+                <div class="flex gap-2"> <!-- Acciones en lote -->
+                    <select class="block w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        <option selected disabled>Acciones en lote</option>
+                        <option value="trash">Mover a la papelera</option>
+                        <option value="processing">Cambiar estado a procesando</option>
+                        <option value="on-hold">Cambiar estado a en espera</option>
+                        <option value="completed">Cambiar estado a completado</option>
+                        <option value="cancelled">Cambiar estado al cancelado</option>
+                        <option value="delete">Eliminar datos personales</option>
+                    </select>
+                    <button class="px-4 py-2 border border-gray-300 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium">
+                        Aplicar
+                    </button>
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-2"> <!-- Filtros -->
+                    <!-- MODIFICADO: Opciones de fecha -->
+                    <select class="block w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        <option selected disabled>Todas las fechas</option>
+                        <option value="today">Último día</option>
+                        <option value="last-week">Última semana</option>
+                        <option value="this-month">Este mes</option>
+                        <option value="last-3-months">Últimos 3 meses</option>
+                    </select>
+                    <input type="text" placeholder="Filtrar por cliente registrado" class="block w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 text-sm font-medium">
+                        Filtrar
+                    </button>
+                </div>
+                
+                <!-- MODIFICADO: Buscador movido -->
+                <form class="flex">
+                    <input type="search" placeholder="Buscar pedidos..." class="block w-auto rounded-l-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    <button type="submit" class="px-4 py-2 border border-gray-300 bg-gray-100 text-gray-700 rounded-r-md hover:bg-gray-200 text-sm font-medium">
+                        Buscar pedidos
+                    </button>
+                </form>
+
+            </div>
+            
+            <!-- Contenedor de la tabla/lista -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <!-- Encabezado de la tabla (MODIFICADO: Añadido Checkbox, ajustado col-span) -->
+                <div class="hidden md:grid grid-cols-12 gap-4 p-4 border-b font-semibold text-gray-600 text-sm">
+                    <div class="col-span-1 flex items-center">
+                        <!-- MODIFICADO: Añadido ID y onclick -->
+                        <input type="checkbox" id="checkbox-select-all" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" onclick="toggleSelectAll(this)">
+                    </div>
+                    <div class="col-span-3 cursor-pointer hover:text-blue-600" onclick="sortOrders('name')">Pedido <span class="sort-icon text-gray-400" data-sort-key="name"></span></div>
+                    <div class="col-span-2 cursor-pointer hover:text-blue-600" onclick="sortOrders('date')">Fecha <span class="sort-icon text-gray-400" data-sort-key="date"></span></div>
+                    <div class="col-span-2 cursor-pointer hover:text-blue-600" onclick="sortOrders('status')">Estado <span class="sort-icon text-gray-400" data-sort-key="status"></span></div>
+                    <div class="col-span-2">Facturación</div> <!-- Ajustado de 3 a 2 -->
+                    <div class="col-span-1 text-right cursor-pointer hover:text-blue-600" onclick="sortOrders('total')">Total <span class="sort-icon text-gray-400" data-sort-key="total"></span></div>
+                    <div class="col-span-1 text-center">Acciones</div>
+                </div>
+
+                <!-- Wrapper para las filas ordenables -->
+                <div id="order-rows-wrapper">
+                
+                    <!-- Fila de Pedido: Zoe Tamayo (Procesando) (MODIFICADO: Añadido Checkbox, ajustado col-span) -->
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border-b items-center order-row"
+                         data-name="Zoe Tamayo"
+                         data-date="2025-11-04T12:16:00Z"
+                         data-status="Procesando"
+                         data-total="218"
+                         data-priority="1">
+                        <!-- NUEVO: Checkbox -->
+                        <div class="md:col-span-1 flex items-center">
+                            <!-- MODIFICADO: Añadida class y onclick -->
+                            <input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 row-checkbox" onclick="checkSelectAllState()">
+                        </div>
+                        <div class="md:col-span-3">
+                            <a href="#" class="font-semibold text-blue-600 hover:text-blue-800 hover:underline" onclick="showView('view-detail'); return false;">
+                                #20 Zoe Tamayo
+                            </a>
+                        </div>
+                        <div class="md:col-span-2 text-sm text-gray-600">hace 13 mins</div>
+                        <div class="md:col-span-2">
+                            <span class="inline-flex items-center rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-200">
+                                Procesando
+                            </span>
+                        </div>
+                        <div class="md:col-span-2 text-sm text-gray-500">Zoe Tamayo Patterson Fletcher, 2349 Court Street...</div> <!-- Ajustado de 3 a 2 -->
+                        <div class="md:col-span-1 text-right font-semibold text-gray-800">$218.00</div>
+                        <div class="md:col-span-1 text-center">
+                            <!-- OJO: Oculto porque no está 'Completado' -->
+                            <button onclick="openModal()" class="text-gray-500 hover:text-blue-600 p-1 rounded-full hover:bg-gray-100 hidden">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                            </button>
+                            <!-- Grupo de botones de acción -->
+                            <div class="flex justify-center items-center gap-1">
+                                <div class="relative">
+                                    <button onclick="toggleActionMenu(event, 20)" class="p-1 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100 hover:text-blue-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5M3.75 12h15" transform="rotate(90 12 12)" /></svg>
+                                    </button>
+                                    <div id="action-menu-20" class="action-menu absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border text-left">
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Pendiente de pago</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Procesando</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">En espera</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Completado</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cancelado</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Devuelto</a>
+                                    </div>
+                                </div>
+                                <button class="p-1 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100 hover:text-blue-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fila de Pedido: Arnou Trepanier (Pendiente) (MODIFICADO: Añadido Checkbox, ajustado col-span) -->
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border-b items-center order-row"
+                         data-name="Arnou Trepanier"
+                         data-date="2025-11-04T12:08:00Z"
+                         data-status="Pendiente de pago"
+                         data-total="105"
+                         data-priority="2">
+                        <!-- NUEVO: Checkbox -->
+                        <div class="md:col-span-1 flex items-center">
+                            <!-- MODIFICADO: Añadida class y onclick -->
+                            <input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 row-checkbox" onclick="checkSelectAllState()">
+                        </div>
+                        <div class="md:col-span-3">
+                            <a href="#" class="font-semibold text-blue-600 hover:text-blue-800 hover:underline" onclick="showView('view-detail'); return false;">
+                                #11 Arnou Trepanier
+                            </a>
+                        </div>
+                        <div class="md:col-span-2 text-sm text-gray-600">hace 21 mins</div>
+                        <div class="md:col-span-2">
+                            <span class="inline-flex items-center rounded-md bg-orange-100 px-2 py-1 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-200">
+                                Pendiente de pago
+                            </span>
+                        </div>
+                        <div class="md:col-span-2 text-sm text-gray-500">Adaptabiz, Arnou Trepanier, 11 Rue Pierre de Coubertin...</div> <!-- Ajustado de 3 a 2 -->
+                        <div class="md:col-span-1 text-right font-semibold text-gray-800">$105.00</div>
+                        <div class="md:col-span-1 text-center">
+                            <!-- OJO: Oculto -->
+                            <button onclick="openModal()" class="text-gray-500 hover:text-blue-600 p-1 rounded-full hover:bg-gray-100 hidden">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                            </button>
+                            <!-- Grupo de botones de acción -->
+                            <div class="flex justify-center items-center gap-1">
+                                <div class="relative">
+                                    <button onclick="toggleActionMenu(event, 11)" class="p-1 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100 hover:text-blue-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5M3.75 12h15" transform="rotate(90 12 12)" /></svg>
+                                    </button>
+                                    <div id="action-menu-11" class="action-menu absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border text-left">
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Pendiente de pago</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Procesando</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">En espera</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Completado</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cancelado</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Devuelto</a>
+                                    </div>
+                                </div>
+                                <button class="p-1 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100 hover:text-blue-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fila de Pedido: Buhle Luthuli (Completado) (MODIFICADO: Añadido Checkbox, ajustado col-span) -->
+                    <!-- MODIFICADO: Añadida clase 'opacity-60' -->
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border-b items-center order-row opacity-60"
+                         data-name="Buhle Luthuli"
+                         data-date="2025-11-04T12:12:00Z"
+                         data-status="Completado"
+                         data-total="108"
+                         data-priority="3">
+                        <!-- NUEVO: Checkbox -->
+                        <div class="md:col-span-1 flex items-center">
+                            <!-- MODIFICADO: Añadida class y onclick -->
+                            <input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 row-checkbox" onclick="checkSelectAllState()">
+                        </div>
+                        <div class="md:col-span-3">
+                            <a href="#" class="font-semibold text-blue-600 hover:text-blue-800 hover:underline" onclick="showView('view-detail'); return false;">
+                                #16 Buhle Luthuli
+                            </a>
+                        </div>
+                        <div class="md:col-span-2 text-sm text-gray-600">hace 17 mins</div>
+                        <div class="md:col-span-2">
+                            <span class="inline-flex items-center rounded-md bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-200">
+                                Completado
+                            </span>
+                        </div>
+                        <div class="md:col-span-2 text-sm text-gray-500">Buhle Luthuli, SAYS, 1964 Bo Meul, Woodstock...</div> <!-- Ajustado de 3 a 2 -->
+                        <div class="md:col-span-1 text-right font-semibold text-gray-800">$108.00</div>
+                        <div class="md:col-span-1 text-center">
+                            <!-- OJO: Visible -->
+                            <button onclick="openModal()" class="text-gray-500 hover:text-blue-600 p-1 rounded-full hover:bg-gray-100">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                            </button>
+                            <!-- Grupo de botones de acción (Oculto) -->
+                            <div class="flex justify-center items-center gap-1 hidden">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fila de Pedido: Megan Harrison (Reembolsado) (MODIFICADO: Añadido Checkbox, ajustado col-span) -->
+                    <!-- MODIFICADO: Añadida clase 'opacity-60' -->
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border-b items-center order-row opacity-60"
+                         data-name="Megan Harrison"
+                         data-date="2025-11-04T12:10:00Z"
+                         data-status="Reembolsado"
+                         data-total="135"
+                         data-priority="3">
+                        <!-- NUEVO: Checkbox -->
+                        <div class="md:col-span-1 flex items-center">
+                            <!-- MODIFICADO: Añadida class y onclick -->
+                            <input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 row-checkbox" onclick="checkSelectAllState()">
+                        </div>
+                        <div class="md:col-span-3">
+                            <a href="#" class="font-semibold text-blue-600 hover:text-blue-800 hover:underline" onclick="showView('view-detail'); return false;">
+                                #18 Megan Harrison
+                            </a>
+                        </div>
+                        <div class="md:col-span-2 text-sm text-gray-600">hace 19 mins</div>
+                        <div class="md:col-span-2">
+                            <span class="inline-flex items-center rounded-md bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-700 ring-1 ring-inset ring-yellow-200">
+                                Reembolsado
+                            </span>
+                        </div>
+                        <div class="md:col-span-2 text-sm text-gray-500">Megan Harrison, Patterson Fletcher, 47 City Walls...</div> <!-- Ajustado de 3 a 2 -->
+                        <div class="md:col-span-1 text-right font-semibold text-gray-800">$135.00</div>
+                        <div class="md:col-span-1 text-center">
+                            <!-- OJO: Oculto -->
+                            <button onclick="openModal()" class="text-gray-500 hover:text-blue-600 p-1 rounded-full hover:bg-gray-100 hidden">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                            </button>
+                            <!-- Grupo de botones de acción -->
+                            <div class="flex justify-center items-center gap-1">
+                                <div class="relative">
+                                    <button onclick="toggleActionMenu(event, 18)" class="p-1 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100 hover:text-blue-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5M3.75 12h15" transform="rotate(90 12 12)" /></svg>
+                                    </button>
+                                    <div id="action-menu-18" class="action-menu absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border text-left">
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Pendiente de pago</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Procesando</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">En espera</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Completado</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cancelado</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Devuelto</a>
+                                    </div>
+                                </div>
+                                <button class="p-1 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100 hover:text-blue-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fila de Pedido: Zoe Tamayo (Cancelado) (MODIFICADO: Añadido Checkbox, ajustado col-span) -->
+                    <!-- MODIFICADO: Añadida clase 'opacity-60' -->
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border-b items-center order-row opacity-60"
+                         data-name="Zoe Tamayo Patterson Fletcher"
+                         data-date="2020-05-06T12:00:00Z"
+                         data-status="Cancelado"
+                         data-total="0"
+                         data-priority="3">
+                        <!-- NUEVO: Checkbox -->
+                        <div class="md:col-span-1 flex items-center">
+                            <!-- MODIFICADO: Añadida class y onclick -->
+                            <input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 row-checkbox" onclick="checkSelectAllState()">
+                        </div>
+                        <div class="md:col-span-3">
+                            <a href="#" class="font-semibold text-blue-600 hover:text-blue-800 hover:underline" onclick="showView('view-detail'); return false;">
+                                #10 Zoe Tamayo Patterson Fletcher
+                            </a>
+                        </div>
+                        <div class="md:col-span-2 text-sm text-gray-600">6 May, 2020</div>
+                        <div class="md:col-span-2">
+                            <span class="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-200">
+                                Cancelado
+                            </span>
+                        </div>
+                        <div class="md:col-span-2 text-sm text-gray-500"> <!-- Ajustado de 3 a 2 -->
+                            Zoe Tamayo Patterson Fletcher, Court Street...
+                        </div>
+                        <div class="md:col-span-1 text-right font-semibold text-gray-800">
+                            $0.00
+                        </div>
+                        <div class="md:col-span-1 text-center">
+                            <!-- OJO: Oculto -->
+                            <button onclick="openModal()" class="text-gray-500 hover:text-blue-600 p-1 rounded-full hover:bg-gray-100 hidden">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                </svg>
+                            </button>
+                            <!-- Grupo de botones de acción -->
+                            <div class="flex justify-center items-center gap-1">
+                                <div class="relative">
+                                    <button onclick="toggleActionMenu(event, 10)" class="p-1 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100 hover:text-blue-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5M3.75 12h15" transform="rotate(90 12 12)" /></svg>
+                                    </button>
+                                    <div id="action-menu-10" class="action-menu absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border text-left">
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Pendiente de pago</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Procesando</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">En espera</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Completado</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cancelado</a>
+                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Devuelto</a>
+                                    </div>
+                                </div>
+                                <button class="p-1 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100 hover:text-blue-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                
+                </div> <!-- Fin de #order-rows-wrapper -->
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- VISTA 2: DETALLES DEL PEDIDO (Imagen 2)                             -->
+        <!-- =================================================================== -->
+        <div id="view-detail" class="view">
+            <!-- Encabezado (MODIFICADO: Estilo de PRODUCTOS.html) -->
+            <div class="w-full flex justify-between items-center pt-4 pb-6 mb-4">
+                <!-- Izquierda: Logo + Título + Botón Añadir -->
+                <div class="flex items-center gap-4">
+                    <!-- MODIFICADO: Logo clicable y con estilos hover -->
+                    <img data-src-key="logo" alt="Logo" class="h-10 w-auto cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-95" onclick="handleNavigation('INDEX')">
+                    
+                    <div class="flex items-center gap-3">
+                        <h1 class="text-3xl font-bold text-white">Editar pedido</h1>
+                        <!-- Botón "Añadir pedido" (se mantiene) -->
+                        <button class="flex items-center gap-1 px-4 py-1 bg-green-500 text-white rounded-md shadow-sm hover:bg-green-600 text-sm border-transparent">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            Añadir pedido
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Derecha: NUEVO Botón Volver (con onclick adaptado) -->
+                <button
+                  onclick="showView('view-list')"
+                  type="button"
+                  style="font-family: 'Inter', sans-serif;"
+                  class="bg-white text-center w-48 rounded-2xl h-14 relative text-blue-700 text-xl font-semibold border-4 border-white group shadow-md"
+                >
+                  <div
+                    class="bg-blue-600 rounded-xl h-12 w-1/4 grid place-items-center absolute left-0 top-0 group-hover:w-full z-10 duration-500"
+                  >
+                    <svg class="w-6 h-6" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                      <path fill="#FFFFFF" d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z"></path>
+                      <path fill="#FFFFFF" d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z"></path>
+                    </svg>
+                  </div>
+                  <p class="translate-x-4 transition-transform duration-500 group-hover:translate-x-0">Volver</p> 
+                </button>
+            </div>
+
+            <!-- Contenedor principal del formulario -->
+            <div class="flex flex-col lg:flex-row gap-6">
+                
+                <!-- Columna principal (Formulario) -->
+                <div class="flex-grow bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Detalles de Pedido #25572</h2>
+                    
+                    <!-- Sección General -->
+                    <div class="border-b pb-6 mb-6">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">General</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Fecha de creación -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Fecha de creación:</label>
+                                <div class="flex gap-2">
+                                    <input type="date" value="2020-04-09" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    <input type="time" value="09:35" class="block w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                </div>
+                            </div>
+                            <!-- Estado -->
+                            <div>
+                                <label for="order-status" class="block text-sm font-medium text-gray-600 mb-1">Estado:</label>
+                                <select id="order-status" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    <option>Pendiente de pago</option>
+                                    <option>Procesando</option>
+                                    <option selected>Completado</option>
+                                    <option>Cancelado</option>
+                                    <option>Reembolsado</option>
+                                </select>
+                            </div>
+                            <!-- Cliente -->
+                            <div>
+                                <label for="customer" class="block text-sm font-medium text-gray-600 mb-1">Cliente:</label>
+                                <input type="text" id="customer" value="Invitado" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección Facturación y Envío -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8">
+                        <!-- Facturación -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Facturación</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="sm:col-span-1">
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Nombre</label>
+                                    <input type="text" class="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                                </div>
+                                <div class="sm:col-span-1">
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Apellidos</label>
+                                    <input type="text" class="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Empresa</label>
+                                    <input type="text" class="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Dirección (Línea 1)</label>
+                                    <input type="text" class="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Dirección (Línea 2)</label>
+                                    <input type="text" class="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                                </div>
+                                <div class="sm:col-span-1">
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Ciudad</label>
+                                    <input type="text" class="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                                </div>
+                                <div class="sm:col-span-1">
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Código postal</label>
+                                    <input type="text" class="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                                </div>
+                                <div class="sm:col-span-1">
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">País/Región</label>
+                                    <input type="text" value="España" class="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm bg-gray-50">
+                                </div>
+                                <div class="sm:col-span-1">
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Región / Provincia</label>
+                                    <select class="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                                        <option>Elige una opción...</option>
+                                    </select>
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Dirección de correo electrónico</label>
+                                    <input type="email" class="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-600 mb-1">Teléfono</label>
+                                    <input type="tel" class="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Envío -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Envío</h3>
+                            <p class="text-sm text-gray-500">Sin dirección de envío configurada.</p>
+                        </div>
+                    </div>
+
+                    <!-- Método de pago -->
+                    <div class="mt-6">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Método de pago:</label>
+                        <!-- MODIFICADO: Opciones de método de pago -->
+                        <select class="block w-full md:w-1/2 rounded-md border-gray-300 shadow-sm sm:text-sm">
+                            <option value="bacs">Transferencia bancaria directa</option>
+                            <option value="cheque">Pago por cheque</option>
+                            <option value="cod">Contra reembolso</option>
+                            <option value="paypal">PayPal</option>
+                            <option value="stripe">Tarjeta de crédito (Stripe)</option>
+                            <option selected>N/D</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <!-- Columna lateral (Acciones y Notas) -->
+                <div class="w-full lg:w-1/3 space-y-6">
+                    <!-- Acciones del Pedido -->
+                    <div class="bg-white rounded-lg shadow-md">
+                        <h3 class="text-lg font-semibold text-gray-700 p-4 border-b">Acciones del Pedido</h3>
+                        <div class="p-4 space-y-3">
+                            <!-- MODIFICADO: Opciones de acciones -->
+                            <select class="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                                <option selected disabled>Elige una acción...</option>
+                                <option value="send-invoice">Enviar factura por email</option>
+                                <option value="regenerate-download">Regenerar permisos de descarga</option>
+                                <option value="resend-confirmation">Reenviar email de pedido</option>
+                            </select>
+                            <button class="w-full px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700">
+                                Actualizar
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Notas del Pedido -->
+                    <div class="bg-white rounded-lg shadow-md">
+                        <h3 class="text-lg font-semibold text-gray-700 p-4 border-b">Notas del Pedido</h3>
+                        <div class="p-4 space-y-4">
+                            <div class="bg-gray-100 p-3 rounded-md text-sm text-gray-700">
+                                <p>El estado del pedido cambió de Procesando a Completado.</p>
+                                <p class="text-xs text-gray-500 mt-1">09/04/2020 a las 9:35 AM</p>
+                            </div>
+                            <div class="bg-purple-100 p-3 rounded-md text-sm text-gray-700">
+                                <p>El estado del pedido cambió de Pendiente de pago a Procesando.</p>
+                                <p class="text-xs text-gray-500 mt-1">09/04/2020 a las 9:35 AM</p>
+                            </div>
+                            <textarea class="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm" rows="3" placeholder="Añadir nota..."></textarea>
+                            <button class="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md shadow-sm hover:bg-gray-300">
+                                Añadir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- VISTA 3: MODAL DE VISTA RÁPIDA (Imagen 3)                           -->
+    <!-- =================================================================== -->
+    <div id="view-modal" class="view fixed inset-0 bg-black bg-opacity-50 items-center justify-center p-4 z-50">
+        <!-- Contenido del Modal -->
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg overflow-hidden">
+            <!-- Encabezado del Modal -->
+            <div class="flex justify-between items-center p-4 border-b">
+                <h2 class="text-xl font-semibold text-gray-800">Order #103</h2>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Cuerpo del Modal -->
+            <div class="p-6">
+                <!-- Tabla de Productos -->
+                <table class="w-full text-left mb-6">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="py-2 font-semibold">Product</th>
+                            <th class="py-2 font-semibold">Quantity</th>
+                            <th class="py-2 font-semibold">Tax</th>
+                            <th class="py-2 font-semibold text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="py-2">Happy Ninja</td>
+                            <td class="py-2">1</td>
+                            <td class="py-2">3,12€</td>
+                            <td class="py-2 text-right">14,88€</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Detalles de Facturación -->
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">Billing details</h3>
+                <div class="text-sm text-gray-600 space-y-1">
+                    <p>Enrique Ros<br>Murcia<br>30000 Murcia<br>Murcia</p>
+                    <p class="pt-2">
+                        <strong>Email:</strong>
+                        <a href="#" class="text-blue-600 hover:underline">enrique@enriquejiros.com</a>
+                    </p>
+                    <p>
+                        <strong>Phone:</strong>
+                        <span>600000000</span>
+                    </p>
+                    <p class="pt-2">
+                        <strong>Payment via:</strong>
+                        <span>Direct bank transfer</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Pie del Modal -->
+            <div class="flex justify-end p-4 bg-gray-50 border-t">
+                <button onclick="closeModal(); showView('view-detail');" class="px-5 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700">
+                    Edit order
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+                  const SCRIPT_URL = '<?= url ?>';
+
+             // ==================================================================
+
+        
+                // --- NAVEGACIÓN DEL DASHBOARD ---
+        function handleNavigation(pageId) {
+            console.log('Navegar a:', pageId);
+            
+            // ¡AQUÍ ESTÁ LA MAGIA!
+            // Esto cambia la URL del navegador, añadiendo el parámetro "?page="
+            window.top.location.href = SCRIPT_URL + "?page=" + pageId;
+        }
+        // --- Lógica de Navegación ---
+        let sortState = { key: 'default', direction: 'desc' };
+        const views = document.querySelectorAll('.view');
+        const modal = document.getElementById('view-modal');
+
+        /**
+         * Muestra una vista específica por su ID y oculta las demás.
+         * @param {string} viewId - El ID de la vista a mostrar (ej. 'view-list', 'view-detail').
+         */
+        function showView(viewId) {
+            // Ocultar todas las vistas principales (no el modal)
+            views.forEach(view => {
+                if (view.id !== 'view-modal') {
+                    view.classList.remove('active');
+                }
+            });
+            
+            // Mostrar la vista solicitada
+            const viewToShow = document.getElementById(viewId);
+            if (viewToShow) {
+                viewToShow.classList.add('active');
+            }
+            // Asegurarse de que el scroll vuelva arriba al cambiar de vista
+            window.scrollTo(0, 0);
+        }
+
+        /**
+         * Abre el modal de vista rápida.
+         */
+        function openModal() {
+            if (modal) {
+                modal.classList.add('active');
+            }
+        }
+
+        /**
+         * Cierra el modal de vista rápida.
+         */
+        function closeModal() {
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
+        
+        /**
+         * Cierra todos los menús de acción abiertos.
+         */
+        function closeAllActionMenus() {
+            document.querySelectorAll('.action-menu').forEach(menu => {
+                menu.classList.remove('active');
+            });
+        }
+        
+        /**
+         * Muestra/oculta un menú de acción específico.
+         * @param {Event} event - El evento de clic.
+         * @param {string|number} orderId - El ID único del pedido.
+         */
+        function toggleActionMenu(event, orderId) {
+            event.stopPropagation(); // Evitar que el clic se propague al listener global
+            const menu = document.getElementById(`action-menu-${orderId}`);
+            if (!menu) return;
+
+            // Cerrar todos los demás menús
+            document.querySelectorAll('.action-menu').forEach(m => {
+                if (m.id !== menu.id) {
+                    m.classList.remove('active');
+                }
+            });
+            
+            // Alternar el menú actual
+            menu.classList.toggle('active');
+        }
+
+
+        // --- NUEVAS FUNCIONES PARA CHECKBOX ---
+
+        /**
+         * Activa/desactiva todos los checkboxes de las filas basado en el checkbox principal.
+         * @param {HTMLInputElement} source - El checkbox "Seleccionar Todo".
+         */
+        function toggleSelectAll(source) {
+            const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+            rowCheckboxes.forEach(checkbox => {
+                checkbox.checked = source.checked;
+            });
+        }
+
+        /**
+         * Revisa el estado de los checkboxes de las filas y actualiza el checkbox principal.
+         * Lo pone en estado "indeterminado" (con una línea) si solo algunos están seleccionados.
+         */
+        function checkSelectAllState() {
+            const selectAllCheckbox = document.getElementById('checkbox-select-all');
+            if (!selectAllCheckbox) return;
+
+            const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+            if (rowCheckboxes.length === 0) return;
+
+            const totalChecked = Array.from(rowCheckboxes).filter(checkbox => checkbox.checked).length;
+            const allChecked = totalChecked === rowCheckboxes.length;
+            const someChecked = totalChecked > 0 && totalChecked < rowCheckboxes.length;
+
+            if (allChecked) {
+                selectAllCheckbox.checked = true;
+                selectAllCheckbox.indeterminate = false;
+            } else if (someChecked) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = true;
+            } else {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            }
+        }
+        // --- FIN DE NUEVAS FUNCIONES ---
+
+
+        // --- LÓGICA DE FILTRADO Y ORDENACIÓN ---
+
+        // NUEVO: Configuración de imagen (de PRODUCTOS.html)
+        const imageConfig = {
+            logo: "https://i.postimg.cc/BQ2Sp0T4/Logotransparente.png"
+        };
+
+        /**
+         * NUEVO: Rellena imágenes basadas en data-src-key (de PRODUCTOS.html)
+         */
+        function populateImages() {
+            const images = document.querySelectorAll('[data-src-key]');
+            images.forEach(img => {
+                const key = img.getAttribute('data-src-key');
+                if (imageConfig[key]) {
+                    img.src = imageConfig[key];
+                }
+            });
+        }
+
+        /**
+         * Obtiene todas las filas de pedidos como un Array.
+         */
+        function getOrderRows() {
+            return Array.from(document.querySelectorAll('.order-row'));
+        }
+
+        /**
+         * Obtiene el contenedor de las filas de pedidos.
+         */
+        function getRowsWrapper() {
+            return document.getElementById('order-rows-wrapper');
+        }
+
+        /**
+         * Ordenación por defecto: Prioridad (ASC), luego Fecha (DESC).
+         */
+        function defaultSort() {
+            sortState = { key: 'default', direction: 'desc' };
+            const rows = getOrderRows();
+            const wrapper = getRowsWrapper();
+            
+            rows.sort((a, b) => {
+                const prioA = parseInt(a.dataset.priority);
+                const prioB = parseInt(b.dataset.priority);
+                
+                // 1. Ordenar por prioridad (ASC: 1, 2, 3)
+                if (prioA !== prioB) {
+                    return prioA - prioB;
+                }
+                
+                // 2. Si la prioridad es la misma, ordenar por fecha (DESC: más nuevo primero)
+                return b.dataset.date.localeCompare(a.dataset.date);
+            });
+            
+            // Volver a añadir las filas ordenadas al DOM
+            rows.forEach(row => wrapper.appendChild(row));
+            updateSortIcons();
+        }
+
+        /**
+         * Ordena las filas de pedidos al hacer clic en un encabezado.
+         * @param {string} key - La clave por la que ordenar (name, date, status, total).
+         */
+        function sortOrders(key) {
+            const rows = getOrderRows();
+            const wrapper = getRowsWrapper();
+            
+            // Determinar la dirección
+            let newDirection = 'desc';
+            if (sortState.key === key && sortState.direction === 'desc') {
+                newDirection = 'asc';
+            }
+            sortState = { key, direction: newDirection };
+
+            const dir = newDirection === 'asc' ? 1 : -1;
+            
+            rows.sort((a, b) => {
+                const valA = a.dataset[key];
+                const valB = b.dataset[key];
+                
+                // Orden numérico para 'total'
+                if (key === 'total') {
+                    return (parseFloat(valA) - parseFloat(valB)) * dir;
+                }
+                
+                // Orden de texto para el resto
+                return valA.localeCompare(valB) * dir;
+            });
+            
+            rows.forEach(row => wrapper.appendChild(row));
+            updateSortIcons();
+        }
+
+        /**
+         * Actualiza los iconos de flecha (↑ ↓) en los encabezados de la tabla.
+         */
+        function updateSortIcons() {
+            document.querySelectorAll('.sort-icon').forEach(icon => {
+                const key = icon.dataset.sortKey;
+                if (key === sortState.key) {
+                    icon.textContent = sortState.direction === 'asc' ? ' ↑' : ' ↓';
+                } else {
+                    icon.textContent = ''; // Limpiar otros iconos
+                }
+            });
+        }
+
+        /**
+         * Filtra las filas de pedidos por estado.
+         * @param {Event} event - El evento de clic.
+         * @param {string} status - El estado por el que filtrar (ej. 'Todos', 'Procesando').
+         */
+        function filterOrders(event, status) {
+            event.preventDefault(); // Evitar que el <a> cambie la URL
+            
+            // Actualizar estilo del enlace activo
+            document.querySelectorAll('.filter-link').forEach(link => {
+                link.classList.remove('font-semibold', 'underline', 'text-white');
+                link.classList.add('hover:text-white', 'hover:underline', 'text-blue-200');
+            });
+            event.target.classList.add('font-semibold', 'underline', 'text-white');
+            event.target.classList.remove('hover:text-white', 'hover:underline', 'text-blue-200');
+            
+            // Filtrar las filas
+            const rows = document.querySelectorAll('.order-row');
+            rows.forEach(row => {
+                if (status === 'Todos' || row.dataset.status === status) {
+                    row.style.display = 'grid'; // Mostrar (reestablecer a 'grid')
+                } else {
+                    row.style.display = 'none'; // Ocultar
+                }
+            });
+        }
+
+        // --- Inicialización ---
+
+        // Asegurarse de que la vista de lista esté activa al cargar
+        document.addEventListener('DOMContentLoaded', () => {
+            showView('view-list');
+            defaultSort(); // Aplicar el orden por defecto al cargar
+            populateImages(); // NUEVO: Cargar el logo
+            
+            // Listener global para cerrar menús si se hace clic fuera
+            document.addEventListener('click', function(event) {
+                // Comprobar si se hizo clic fuera de un menú activo
+                if (!event.target.closest('.relative')) {
+                    closeAllActionMenus();
+                }
+            });
+
+            // Opcional: Cerrar el modal si se hace clic en el fondo oscuro
+            modal.addEventListener('click', function(event) {
+                // Comprobar si se hizo clic directamente en el fondo (overlay)
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+        });
+
+    </script>
+
+</body>
+</html>
+
+

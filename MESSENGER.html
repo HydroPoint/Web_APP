@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat del Lead - CRM</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <style>
+        html { height: 100%; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* bg-gray-100 */
+            height: 100%;
+            overflow: hidden; /* ¡Clave! Sin scroll principal */
+        }
+        
+        .form-field {
+            width: 100%;
+            margin-top: 0.25rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            background-color: #f3f4f6; /* bg-gray-100 */
+            border: 1px solid transparent;
+        }
+        .form-field:focus {
+            border-color: #3b82f6; /* border-blue-500 */
+            background-color: #ffffff;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        /* --- Estilos del Chat --- */
+        .chat-bubble-incoming {
+            background-color: #ffffff;
+            border-radius: 0 1rem 1rem 1rem;
+        }
+        .chat-bubble-outgoing {
+            background-color: #dbeafe; /* bg-blue-100 */
+            border-radius: 1rem 0 1rem 1rem;
+        }
+        .chat-bubble-system {
+            background-color: #f3f4f6; /* bg-gray-100 */
+            color: #6b7280; /* text-gray-500 */
+            font-size: 0.875rem;
+            text-align: center;
+        }
+        
+        /* Spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #00008B;
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-blue-600 h-full flex flex-col">
+
+    <div class="w-full max-w-full mx-auto px-6 flex-shrink-0">
+        <div class="w-full flex justify-between items-center pt-8 pb-10">
+            <img data-src-key="logo" alt="Logo" 
+                 class="h-10 w-auto cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-95 hover:drop-shadow-lg" 
+                 onclick="handleNavigation('INDEX')">
+            
+            <h1 id="header-title" class="text-3xl font-bold text-white hidden md:block">
+                <i class="fa-solid fa-comments me-2"></i> Chat: <span id="header-lead-name">...</span>
+            </h1>
+            
+            <button
+              id="btn-back-to-crm" 
+              onclick="handleNavigation('CHAT_CLIENTES')"
+              type="button"
+              class="bg-white text-center w-48 rounded-2xl h-14 relative text-blue-700 text-xl font-semibold border-4 border-white group"
+            >
+              <div class="bg-blue-600 rounded-xl h-12 w-1/4 grid place-items-center absolute left-0 top-0 group-hover:w-full z-10 duration-500">
+                <svg class="w-6 h-6" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                  <path fill="#FFFFFF" d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z"></path>
+                  <path fill="#FFFFFF" d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z"></path>
+                </svg>
+              </div>
+              <p class="translate-x-4 transition-transform duration-500 group-hover:translate-x-0">Volver</p> 
+            </button>
+        </div>
+    </div>
+    
+    <div class="flex-grow grid grid-cols-1 lg:grid-cols-3 gap-6 px-6 pb-6 overflow-hidden">
+        
+        <div class="lg:col-span-1 bg-white rounded-lg shadow-md p-6 overflow-y-auto">
+            
+            <div id="details-loading" class="text-center py-10">
+                <div class="spinner mx-auto"></div>
+                <p class="text-gray-500 mt-2">Cargando datos del lead...</p>
+            </div>
+
+            <div id="details-content" class="hidden">
+                <div class="text-center mb-6">
+                    <div class="w-24 h-24 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mx-auto mb-4">
+                        <span id="lead-avatar" class="text-4xl font-bold">A</span>
+                    </div>
+                    <h2 id="lead-name" class="text-2xl font-bold text-gray-900">Andreaj</h2>
+                    <p id="lead-id" class="text-sm text-gray-500 mb-4">Lead #11496988</p>
+                </div>
+
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Estado del Lead</label>
+                        <select id="lead-status" class="form-field w-full mt-1 font-semibold" style="background-color: #fffd7f; color: #856404;">
+                            <option value="76910359" style="background-color:#98cbff;">Contacto Inicial</option>
+                            <option value="76910363" style="background-color:#fffd7f;" selected>Nueva consulta</option>
+                            <option value="76910367" style="background-color:#ffce5a;">Factura enviada</option>
+                            <option value="142" style="background-color:#CCFF66;">Pedido completado</option>
+                            <option value="143" style="background-color:#D5D8DB;">Pedido abandonado</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Presupuesto</label>
+                        <input type="text" id="lead-budget" class="form-field" value="$0">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Tags</label>
+                        <div id="lead-tags" class="flex flex-wrap gap-2 mt-2">
+                            <span class="bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Sin Tags</span>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h4 class="text-lg font-semibold text-gray-800">Información de Contacto</h4>
+                    
+                    <div>
+                        <h5 class="text-sm font-medium text-gray-500">Teléfono</h5>
+                        <p id="lead-phone" class="text-gray-900 font-medium">+57 317 5922916</p>
+                    </div>
+
+                    <div>
+                        <h5 class="text-sm font-medium text-gray-500">Email</h5>
+                        <p id="lead-email" class="text-gray-900 font-medium">N/A</p>
+                    </div>
+
+                    <div>
+                        <h5 class="text-sm font-medium text-gray-500">Responsable</h5>
+                        <p id="lead-owner" class="text-gray-900 font-medium">Vieja Escuela Rolling Papers</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2 bg-white rounded-lg shadow-md flex flex-col overflow-hidden">
+            
+            <div id="chat-history-container" class="flex-grow p-6 space-y-6 overflow-y-auto">
+                
+                <div id="chat-loading" class="text-center py-10">
+                    <div class="spinner mx-auto"></div>
+                    <p class="text-gray-500 mt-2">Cargando historial de chat...</p>
+                </div>
+                
+                <div class="chat-bubble-system p-2 rounded-lg">
+                    Lead creado - 17/03/2025 11:17 AM
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <span class="flex-shrink-0 w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center">
+                        <i class="fa-solid fa-user"></i>
+                    </span>
+                    <div class="p-4 chat-bubble-incoming shadow-sm">
+                        <p class="font-bold text-gray-800">Cliente</p>
+                        <p class="text-gray-700">¿Qué tiendas tienen sus productos?</p>
+                        <div class="text-xs text-gray-400 mt-1 text-right">11:17 AM</div>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3 justify-end">
+                    <div class="p-4 chat-bubble-outgoing shadow-sm">
+                        <p class="font-bold text-blue-800">Tú (Vieja Escuela)</p>
+                        <p class="text-gray-800">En la jugueteria420 por metrocentro</p>
+                        <div class="text-xs text-gray-500 mt-1 text-right">12:39 PM</div>
+                    </div>
+                    <span class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </span>
+                </div>
+                </div>
+            
+            <div id="compose-container" class="flex-shrink-0 border-t border-gray-200 bg-white">
+                
+                <div class="flex border-b border-gray-200">
+                    <button id="btn-mode-chat" class="tab-button-compose active px-4 py-3 font-medium text-sm text-blue-600 border-b-2 border-blue-600">
+                        <i class="fa-solid fa-comments me-2"></i> Chat
+                    </button>
+                    <button id="btn-mode-note" class="tab-button-compose px-4 py-3 font-medium text-sm text-gray-500">
+                        <i class="fa-solid fa-sticky-note me-2"></i> Nota Interna
+                    </button>
+                    <button id="btn-mode-task" class="tab-button-compose px-4 py-3 font-medium text-sm text-gray-500">
+                        <i class="fa-solid fa-calendar-check me-2"></i> Tarea
+                    </button>
+                </div>
+
+                <div class="p-4">
+                    <textarea id="message-textarea" class="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Escribe un mensaje... (Usa / para plantillas)"></textarea>
+                    
+                    <div class="flex justify-between items-center mt-3">
+                        <div>
+                            <button class="text-gray-500 hover:text-blue-600 p-2" title="Adjuntar Archivo">
+                                <i class="fa-solid fa-paperclip fa-lg"></i>
+                            </button>
+                            <button class="text-gray-500 hover:text-blue-600 p-2" title="Usar Plantilla">
+                                <i class="fa-solid fa-brain fa-lg"></i>
+                            </button>
+                        </div>
+                        <button id="send-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-300">
+                            Enviar <i class="fa-solid fa-paper-plane ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    
+<script>
+    // ==================================================================
+    // CONFIGURACIÓN BÁSICA
+    // ==================================================================
+    const SCRIPT_URL = '<?= url ?>'; // Llenado por doGet
+    let CURRENT_LEAD_ID = null; // Se llenará con el ID de la URL
+    let CURRENT_LEAD_NAME = "Lead"; // Nombre para el log
+    let CURRENT_COMPOSE_MODE = 'chat'; // 'chat', 'note', 'task'
+
+    const imageConfig = {
+        logo: "https://i.postimg.cc/BQ2Sp0T4/Logotransparente.png"
+    };
+
+    function populateImages() {
+        document.querySelectorAll('[data-src-key]').forEach(img => {
+            const key = img.getAttribute('data-src-key');
+            if (imageConfig[key]) img.src = imageConfig[key];
+        });
+    }
+    
+    function handleNavigation(pageId) {
+        window.top.location.href = SCRIPT_URL + "?page=" + pageId;
+    }
+
+    // Helper para obtener el ID del lead de la URL
+    function getUrlParameter(name) {
+        name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+        var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+        var results = regex.exec(location.search);
+        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    }
+
+    // ==================================================================
+    // LÓGICA DE CARGA DE DATOS
+    // ==================================================================
+    
+    window.onload = function() {
+        populateImages();
+        
+        // 1. Obtener el ID del Lead desde la URL
+        CURRENT_LEAD_ID = getUrlParameter('lead_id');
+        if (!CURRENT_LEAD_ID) {
+            alert('Error: No se proporcionó un ID de lead.');
+            handleNavigation('CHAT_CLIENTES'); // Volver al Kanban
+            return;
+        }
+
+        // 2. Cargar los datos
+        loadLeadData(CURRENT_LEAD_ID);
+        
+        // 3. Configurar Listeners
+        document.getElementById('send-button').addEventListener('click', handleSendMessage);
+        
+        document.getElementById('btn-mode-chat').addEventListener('click', () => switchComposeMode('chat'));
+        document.getElementById('btn-mode-note').addEventListener('click', () => switchComposeMode('note'));
+        document.getElementById('btn-mode-task').addEventListener('click', () => switchComposeMode('task'));
+    };
+    
+    /**
+     * Llama al .gs para obtener los detalles del lead Y su historial de chat
+     */
+    function loadLeadData(leadId) {
+        // Mostrar spinners
+        document.getElementById('details-loading').classList.remove('hidden');
+        document.getElementById('chat-loading').classList.remove('hidden');
+        document.getElementById('details-content').classList.add('hidden');
+        
+        google.script.run
+            .withSuccessHandler(onLoadDataSuccess)
+            .withFailureHandler(onLoadDataFailure)
+            .getLeadDetailsAndChat(leadId); // <-- ⚠️ NUEVA FUNCIÓN a crear en .gs
+    }
+    
+    function onLoadDataFailure(error) {
+        alert('Error al cargar datos: ' + error.message);
+        console.error(error);
+    }
+    
+    /**
+     * Se ejecuta cuando los datos llegan del .gs
+     * data = { details: {...}, chat: [...] }
+     */
+    function onLoadDataSuccess(data) {
+        // 1. Ocultar spinners y mostrar contenido
+        document.getElementById('details-loading').classList.add('hidden');
+        document.getElementById('chat-loading').classList.add('hidden');
+        document.getElementById('details-content').classList.remove('hidden');
+
+        // 2. Poblar Panel de Detalles (Izquierda)
+        const d = data.details;
+        CURRENT_LEAD_NAME = d.Nombre || `Lead #${d.CLIENTE_ID}`;
+        
+        document.getElementById('header-lead-name').textContent = CURRENT_LEAD_NAME;
+        document.getElementById('lead-avatar').textContent = (CURRENT_LEAD_NAME[0] || 'L').toUpperCase();
+        document.getElementById('lead-name').textContent = CURRENT_LEAD_NAME;
+        document.getElementById('lead-id').textContent = `Lead #${d.CLIENTE_ID}`;
+        document.getElementById('lead-status').value = d.Estado_ID || ''; // Asumiendo que traes el ID del estado
+        document.getElementById('lead-budget').value = d.Presupuesto || '$0';
+        document.getElementById('lead-phone').textContent = d.Tel || 'N/A';
+        document.getElementById('lead-email').textContent = d.Email || 'N/A';
+        document.getElementById('lead-owner').textContent = d.Responsable || 'N/A';
+        
+        // Poblar Tags
+        const tagsContainer = document.getElementById('lead-tags');
+        if (d.Tags && d.Tags.length > 0) {
+            tagsContainer.innerHTML = ''; // Limpiar 'Sin Tags'
+            d.Tags.split(',').forEach(tag => {
+                const tagEl = document.createElement('span');
+                tagEl.className = 'bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-0.5 rounded-full';
+                tagEl.textContent = tag.trim();
+                tagsContainer.appendChild(tagEl);
+            });
+        }
+        
+        // 3. Renderizar Historial de Chat (Derecha)
+        renderChatHistory(data.chat);
+    }
+
+    /**
+     * Recorre el array de chat y lo pinta en el DOM
+     */
+    function renderChatHistory(chatHistory) {
+        const container = document.getElementById('chat-history-container');
+        container.innerHTML = ''; // Limpiar spinners y ejemplos
+        
+        if (!chatHistory || chatHistory.length === 0) {
+            container.innerHTML = '<div class="chat-bubble-system p-2 rounded-lg">No hay mensajes. ¡Inicia la conversación!</div>';
+            return;
+        }
+
+        chatHistory.forEach(msg => {
+            // Asumiendo que msg.Usuario es 'Sistema', 'Cliente', o tu nombre
+            if (msg.Usuario === 'Sistema') {
+                container.appendChild(createSystemBubble(msg));
+            } else if (msg.Mensaje_Recibido) {
+                // Mensaje del cliente
+                container.appendChild(createIncomingBubble(msg));
+            } else {
+                // Mensaje tuyo (saliente)
+                container.appendChild(createOutgoingBubble(msg));
+            }
+        });
+        
+        // Scroll hasta el final
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function createIncomingBubble(msg) {
+        const div = document.createElement('div');
+        div.className = 'flex items-start gap-3';
+        div.innerHTML = `
+            <span class="flex-shrink-0 w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center">
+                <i class="fa-solid fa-user"></i>
+            </span>
+            <div class="p-4 chat-bubble-incoming shadow-sm max-w-[80%]">
+                <p class="font-bold text-gray-800">${msg.Nombre_Cliente || 'Cliente'}</p>
+                <p class="text-gray-700 whitespace-pre-wrap">${msg.Mensaje_Recibido}</p>
+                <div class="text-xs text-gray-400 mt-1 text-right">${new Date(msg.Fecha).toLocaleTimeString()}</div>
+            </div>
+        `;
+        return div;
+    }
+    
+    function createOutgoingBubble(msg) {
+        const div = document.createElement('div');
+        div.className = 'flex items-start gap-3 justify-end';
+        div.innerHTML = `
+            <div class="p-4 chat-bubble-outgoing shadow-sm max-w-[80%]">
+                <p class="font-bold text-blue-800">${msg.Usuario || 'Tú'}</p>
+                <p class="text-gray-800 whitespace-pre-wrap">${msg.Mensaje_Enviado}</p>
+                <div class="text-xs text-gray-500 mt-1 text-right">${new Date(msg.Fecha).toLocaleTimeString()}</div>
+            </div>
+            <span class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center">
+                <i class="fa-solid fa-user-tie"></i>
+            </span>
+        `;
+        return div;
+    }
+    
+    function createSystemBubble(msg) {
+        const div = document.createElement('div');
+        div.className = 'chat-bubble-system p-2 rounded-lg';
+        div.textContent = `${msg.Mensaje_Enviado} - ${new Date(msg.Fecha).toLocaleString()}`;
+        return div;
+    }
+
+
+    // ==================================================================
+    // LÓGICA DE ENVÍO
+    // ==================================================================
+
+    function switchComposeMode(mode) {
+        CURRENT_COMPOSE_MODE = mode;
+        const textarea = document.getElementById('message-textarea');
+        const sendButton = document.getElementById('send-button');
+        
+        // Resetear botones
+        document.querySelectorAll('.tab-button-compose').forEach(btn => {
+            btn.classList.remove('active', 'text-blue-600', 'border-blue-600');
+            btn.classList.add('text-gray-500');
+        });
+        
+        if (mode === 'chat') {
+            const btn = document.getElementById('btn-mode-chat');
+            btn.classList.add('active', 'text-blue-600', 'border-blue-600');
+            textarea.placeholder = 'Escribe un mensaje... (Usa / para plantillas)';
+            sendButton.innerHTML = 'Enviar <i class="fa-solid fa-paper-plane ms-2"></i>';
+        } else if (mode === 'note') {
+            const btn = document.getElementById('btn-mode-note');
+            btn.classList.add('active', 'text-blue-600', 'border-blue-600');
+            textarea.placeholder = 'Escribe una nota interna (solo tu equipo la verá)...';
+            sendButton.innerHTML = 'Guardar Nota <i class="fa-solid fa-floppy-disk ms-2"></i>';
+        } else if (mode === 'task') {
+            const btn = document.getElementById('btn-mode-task');
+            btn.classList.add('active', 'text-blue-600', 'border-blue-600');
+            textarea.placeholder = 'Describe la tarea (ej: Llamar mañana para confirmar pago)';
+            sendButton.innerHTML = 'Crear Tarea <i class="fa-solid fa-plus ms-2"></i>';
+        }
+    }
+    
+    function handleSendMessage() {
+        const textarea = document.getElementById('message-textarea');
+        const messageText = textarea.value.trim();
+        
+        if (!messageText) return; // No enviar mensajes vacíos
+        
+        if (CURRENT_COMPOSE_MODE === 'chat') {
+            // Objeto Payload para la función .gs que YA TIENES
+            const payload = {
+                clienteId: CURRENT_LEAD_ID,
+                nombreCliente: CURRENT_LEAD_NAME,
+                medio: 'Chat Interno',
+                mensajeEnviado: messageText,
+                mensajeRecibido: '',
+                usuario: 'Vieja Escuela' // O el nombre del usuario logueado
+            };
+            
+            // 1. Llamar al servidor
+            google.script.run
+                .withSuccessHandler(() => { console.log('Mensaje guardado en .gs'); })
+                .withFailureHandler((err) => { alert('Error guardando mensaje: ' + err.message); })
+                .logCrmMessage(payload); // <-- ⚠️ ¡Esta función YA EXISTE en tu .gs!
+            
+            // 2. Añadir burbuja al chat (actualización optimista)
+            const msgObject = {
+                Usuario: payload.usuario,
+                Mensaje_Enviado: messageText,
+                Fecha: new Date().toISOString()
+            };
+            const container = document.getElementById('chat-history-container');
+            container.appendChild(createOutgoingBubble(msgObject));
+            container.scrollTop = container.scrollHeight; // Scroll al final
+            
+            // 3. Limpiar
+            textarea.value = '';
+
+        } else if (CURRENT_COMPOSE_MODE === 'note') {
+            alert(`NOTA CREADA (Simulación):\n\n${messageText}`);
+            // Aquí llamarías a google.script.run.createNote(...)
+            textarea.value = '';
+        } else if (CURRENT_COMPOSE_MODE === 'task') {
+            alert(`TAREA CREADA (Simulación):\n\n${messageText}`);
+            // Aquí llamarías a google.script.run.createTask(...)
+            textarea.value = '';
+        }
+    }
+
+</script>
+
+</body>
+</html>

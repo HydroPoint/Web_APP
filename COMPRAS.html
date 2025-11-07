@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Título actualizado para este módulo -->
+    <title>Módulo de Compras | ERP + FMS</title>
+    
+    <!-- Scripts y fuentes de CLIENTES.html -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- === ESTILOS COMPLETOS COPIADOS DE CLIENTES.html === -->
+    <style>
+        /* Estilos base del dashboard */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* El background-color de la página (gris) se aplica aquí, 
+               el <body> tag tendrá el azul para el fondo superior */
+            background-color: #f3f4f6; /* bg-gray-100 */
+        }
+        
+        /* Estilo para los inputs deshabilitados */
+        input:disabled, textarea:disabled, select:disabled {
+            background-color: #e5e7eb; /* bg-gray-200 */
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Estilos para el spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #00008B; /* Color azul oscuro del tema */
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* --- NUEVO ESTILO DE PESTAÑAS (Tabs) --- */
+        .tab-button {
+            transition: all 0.2s ease;
+            border-bottom: 2px solid transparent;
+            padding: 1rem 0.5rem; /* Ajustado para coincidir con la imagen */
+            font-weight: 500;
+            color: #6b7280; /* text-gray-500 */
+        }
+        .tab-button:hover {
+            color: #374151; /* text-gray-700 */
+        }
+        .tab-button.active {
+            border-color: #00008B; /* Nuestro azul principal */
+            color: #00008B;
+        }
+        .tab-panel {
+            display: none;
+        }
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* --- INICIO: ESTILOS CHECKBOX (ADAPTADO A RADIO Y TEMA AZUL) --- */
+        /* (Estos estilos se incluyen para consistencia, aunque no se usen en esta vista) */
+        .checkbox-container {
+          display: inline-block;
+          margin-right: 8px; 
+          user-select: none;
+        }
+        .task-radio { 
+          display: none;
+        }
+        .checkbox-label {
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          font-size: 16px;
+          color: #374151;
+          font-weight: 500;
+          transition: all 0.2s ease;
+          padding: 8px 12px; 
+          border-radius: 8px;
+        }
+        .checkbox-label:hover {
+          background: rgba(59, 130, 246, 0.05); /* Azul-50 */
+          color: #111827;
+        }
+        .checkbox-box {
+          position: relative;
+          width: 22px;
+          height: 22px;
+          border: 2px solid #d1d5db;
+          border-radius: 50%; /* CÍRCULO */
+          margin-right: 12px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          background: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: visible;
+        }
+        .checkbox-fill {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); /* Azul-500 a Azul-600 */
+          transform: scale(0);
+          transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+          border-radius: 50%; /* CÍRCULO */
+          opacity: 0;
+        }
+        .checkmark {
+          position: relative;
+          z-index: 2;
+          opacity: 0;
+          transform: scale(0.3) rotate(20deg);
+          transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        .check-icon {
+          width: 14px;
+          height: 14px;
+          fill: white;
+          filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+        }
+        .success-ripple {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 0;
+          height: 0;
+          background: rgba(59, 130, 246, 0.4); /* Azul-500 */
+          border-radius: 50%;
+          transform: translate(-50%, -50%);
+          opacity: 0;
+          pointer-events: none;
+        }
+        .checkbox-text {
+          transition: all 0.3s ease;
+          position: relative;
+        }
+        .checkbox-label:hover .checkbox-box {
+          border-color: #2563eb; /* Azul-600 */
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); /* Azul-500 */
+        }
+        .task-radio:checked + .checkbox-label .checkbox-box {
+          border-color: #2563eb; /* Azul-600 */
+          background: #2563eb; /* Azul-600 */
+          box-shadow:
+            0 4px 12px rgba(59, 130, 246, 0.3), /* Azul-500 */
+            0 0 0 2px rgba(59, 130, 246, 0.2); /* Azul-500 */
+        }
+        .task-radio:checked + .checkbox-label .checkbox-fill {
+          transform: scale(1);
+          opacity: 1;
+        }
+        .task-radio:checked + .checkbox-label .checkmark {
+          opacity: 1;
+          transform: scale(1) rotate(0deg);
+          animation: checkPop 0.3s ease-out 0.2s;
+        }
+        .task-radio:checked + .checkbox-label .success-ripple {
+          animation: rippleSuccess 0.6s ease-out;
+        }
+        .task-radio:checked + .checkbox-label .checkbox-text {
+          color: #1f2937; /* Texto normal, no grisado */
+        }
+        .checkbox-label:active .checkbox-box {
+          transform: scale(0.95);
+        }
+        @keyframes checkPop {
+          0% { transform: scale(1) rotate(0deg); }
+          50% { transform: scale(1.2) rotate(-5deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+        @keyframes rippleSuccess {
+          0% { width: 0; height: 0; opacity: 0.6; }
+          70% { width: 50px; height: 50px; opacity: 0.3; }
+          100% { width: 60px; height: 60px; opacity: 0; }
+        }
+        /* --- FIN: ESTILOS CHECKBOX --- */
+        
+        /* --- ESTILOS DE GRUPO DE RADIO (OPACIDAD) --- */
+        .radio-group .checkbox-label {
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+        .radio-group:has(.task-radio:checked) .checkbox-label {
+            opacity: 0.5;
+        }
+        .radio-group .task-radio:checked + .checkbox-label {
+            opacity: 1;
+        }
+        /* --- FIN: ESTILOS DE GRUPO DE RADIO --- */
+
+    </style>
+</head>
+<!-- Aplicamos el fondo azul al body, como en CLIENTES.html -->
+<body class="bg-blue-600">
+
+    <!-- Contenedor principal de CLIENTES.html -->
+    <div class="w-full max-w-7xl mx-auto p-6">
+        
+        <!-- ===== HEADER (Copiado 1:1 de CLIENTES.html) ===== -->
+        <div class="w-full flex justify-between items-center pt-8 pb-10">
+            <!-- Logo Interactivo -->
+            <img data-src-key="logo" alt="Logo" 
+                 class="h-10 w-auto cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-95 hover:drop-shadow-lg" 
+                 onclick="handleNavigation('INDEX')">
+            
+            <!-- Título actualizado para este módulo -->
+            <h1 id="header-title" class="text-3xl font-bold text-white hidden md:block">Módulo de Compras</h1>
+            
+            <!-- Botón de Volver/Búsqueda (Copiado 1:1 de CLIENTES.html) -->
+            <button
+              id="btn-back-to-search" 
+              onclick="handleNavigation('INDEX')"
+              type="button"
+              class="bg-white text-center w-48 rounded-2xl h-14 relative text-blue-700 text-xl font-semibold border-4 border-white group"
+            >
+              <div
+                class="bg-blue-600 rounded-xl h-12 w-1/4 grid place-items-center absolute left-0 top-0 group-hover:w-full z-10 duration-500"
+              >
+                <svg
+                  class="w-6 h-6"
+                  viewBox="0 0 1024 1024"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fill="#FFFFFF" 
+                    d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z"
+                  ></path>
+                  <path
+                    fill="#FFFFFF"
+                    d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z"
+                  ></path>
+                </svg>
+              </div>
+              <p class="translate-x-4 transition-transform duration-500 group-hover:translate-x-0">Volver</p> 
+            </button>
+        </div>
+        
+        <!-- ===== CONTENIDO DEL DASHBOARD DE COMPRAS ===== -->
+        <!-- (Insertamos el grid de compras_erp.html aquí) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Columna 1: Pedidos de Compra y Proveedores -->
+            <div class="lg:col-span-2 space-y-6">
+
+                <!-- Widget: Pedidos de Compra (Estilo de card de CLIENTES.html) -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-semibold text-gray-900">Seguimiento de Pedidos de Compra</h2>
+                        <!-- Botón actualizado al color azul de CLIENTES.html -->
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                            Crear Nuevo Pedido
+                        </button>
+                    </div>
+                    
+                    <!-- Tabla de Pedidos (Estilos de tabla de CLIENTES.html) -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[600px] text-sm text-left text-gray-600">
+                            <!-- thead de CLIENTES.html -->
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">Pedido #</th>
+                                    <th scope="col" class="px-6 py-3">Proveedor</th>
+                                    <th scope="col" class="px-6 py-3">Fecha Entrega Est.</th>
+                                    <th scope="col" class="px-6 py-3">Estado de Pago</th>
+                                    <th scope="col" class="px-6 py-3 text-right">Monto Total</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <!-- Fila de ejemplo 1 (padding de td actualizado a px-6 py-4) -->
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap font-medium text-blue-700">#P-00821</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">Aceros Industriales S.A.</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">20/11/2025</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            Pendiente (Orden Pago #OP-456)
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right font-medium">$15,200.00</td>
+                                </tr>
+                                <!-- Fila de ejemplo 2 -->
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap font-medium text-blue-700">#P-00820</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">Componentes Electrónicos Ltd.</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">15/11/2025</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            Pagado (Fact. #F-1092)
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right font-medium">$8,500.00</td>
+                                </tr>
+                                <!-- Fila de ejemplo 3 -->
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap font-medium text-blue-700">#P-00819</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">Suministros de Oficina Corp.</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">10/11/2025 (Entregado)</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            Pagado (Fact. #F-1088)
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right font-medium">$1,350.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Widget: Gestión de Insumos y Proveedores (Estilo de card y PESTAÑAS de CLIENTES.html) -->
+                <div class="bg-white rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4 px-6 pt-6">Gestión de Insumos y Proveedores</h2>
+                    
+                    <!-- Pestañas de CLIENTES.html -->
+                    <div class="border-b border-gray-200">
+                        <nav class="flex gap-6 px-6" aria-label="Tabs">
+                            <button onclick="showTab('proveedores')" id="tab-btn-proveedores" class="tab-button active">
+                                Proveedores Activos (12)
+                            </button>
+                            <button onclick="showTab('insumos')" id="tab-btn-insumos" class="tab-button">
+                                Catálogo de Insumos (450)
+                            </button>
+                        </nav>
+                    </div>
+
+                    <!-- Panel de Proveedores (de CLIENTES.html) -->
+                    <div id="tab-panel-proveedores" class="tab-panel active p-6">
+                        <ul class="divide-y divide-gray-100">
+                            <li class="py-3 flex justify-between items-center">
+                                <div>
+                                    <p class="font-medium text-gray-900">Aceros Industriales S.A.</p>
+                                    <p class="text-sm text-gray-500">Categoría: Materia Prima</p>
+                                </div>
+                                <span class="text-sm font-medium text-green-600">Verificado</span>
+                            </li>
+                            <li class="py-3 flex justify-between items-center">
+                                <div>
+                                    <p class="font-medium text-gray-900">Componentes Electrónicos Ltd.</p>
+                                    <p class="text-sm text-gray-500">Categoría: Electrónica</p>
+                                </div>
+                                <span class="text-sm font-medium text-green-600">Verificado</span>
+                            </li>
+                            <li class="py-3 flex justify-between items-center">
+                                <div>
+                                    <p class="font-medium text-gray-900">Transportes Veloz del Norte</p>
+                                    <p class="text-sm text-gray-500">Categoría: Logística</p>
+                                </div>
+                                <span class="text-sm font-medium text-yellow-600">Pendiente Verificación</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Panel de Insumos (de CLIENTES.html) -->
+                    <div id="tab-panel-insumos" class="tab-panel p-6">
+                         <p class="text-center text-gray-500 py-8">Catálogo de insumos no implementado.</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Columna 2: Contabilidad (Cuentas por Pagar) -->
+            <div class="lg:col-span-1 space-y-6">
+                
+                <!-- Widget: Integración Contable (Estilo de card de CLIENTES.html) -->
+                <div class="bg-white rounded-lg shadow-md p-6 sticky top-6">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <!-- Icono SVG (color azul de CLIENTES.html) -->
+                        <svg class="h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.75A.75.75 0 013 4.5h.75m0 0v.75A.75.75 0 013 6h-.75m0 0H2.25m19.5 0h.75a.75.75 0 00.75-.75v-.75a.75.75 0 00-.75-.75h-.75m0 0v.75a.75.75 0 00.75.75h.75m0 0v-.75a.75.75 0 00-.75-.75h-.75m0 0h-.75m-9 12.75h.75a.75.75 0 00.75-.75v-.75a.75.75 0 00-.75-.75h-.75m0 0v.75a.75.75 0 00.75.75h.75m0 0v-.75a.75.75 0 00-.75-.75h-.75m0 0h-.75M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <h2 class="text-xl font-semibold text-gray-900">Cuentas por Pagar (FMS)</h2>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500">Total Pendiente de Pago</p>
+                        <p class="text-3xl font-bold text-gray-900">$23,700.00</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Facturas Vencidas ( > 30 días)</span>
+                            <span class="font-medium text-red-600">2 ($4,100.00)</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Facturas por Vencer (Próx. 7 días)</span>
+                            <span class="font-medium text-yellow-600">5 ($10,250.00)</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Facturas en Plazo</span>
+                            <span class="font-medium text-gray-700">4 ($9,350.00)</span>
+                        </div>
+                    </div>
+
+                    <hr class="my-5 border-gray-200">
+
+                    <p class="text-sm text-gray-600 mb-3">
+                        Las órdenes de pago aprobadas se sincronizan automáticamente con el FMS.
+                    </p>
+                    
+                    <!-- Botón secundario (Estilo de CLIENTES.html) -->
+                    <button class="w-full bg-gray-200 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors">
+                        Ver Reporte Detallado
+                    </button>
+                </div>
+
+            </div>
+
+        </div> <!-- Fin del grid de contenido -->
+
+    </div> <!-- Fin del contenedor max-w-7xl -->
+
+    <!-- === SCRIPT COPIADO DE CLIENTES.html (solo funciones necesarias) === -->
+    <script>
+        // URL de script (supuesta)
+        const SCRIPT_URL = '<?= url ?>'; // Asegúrate de que esto se reemplace en tu entorno de GAS
+
+        // ==================================================================
+        // LISTADO CENTRAL DE IMÁGENES (de CLIENTES.html)
+        // ==================================================================
+        const imageConfig = {
+            logo: "https://i.postimg.cc/BQ2Sp0T4/Logotransparente.png"
+        };
+
+        function populateImages() {
+            const images = document.querySelectorAll('[data-src-key]');
+            images.forEach(img => {
+                const key = img.getAttribute('data-src-key');
+                if (imageConfig[key]) {
+                    img.src = imageConfig[key];
+                }
+            });
+        }
+        // ==================================================================
+
+        /**
+         * Maneja el clic en las pestañas (adaptado para Compras)
+         */
+        function showTab(tabName) {
+            // Ocultar todos los paneles
+            document.getElementById('tab-panel-proveedores').classList.remove('active');
+            document.getElementById('tab-panel-insumos').classList.remove('active');
+            
+            // Quitar 'active' de todos los botones
+            document.getElementById('tab-btn-proveedores').classList.remove('active');
+            document.getElementById('tab-btn-insumos').classList.remove('active');
+
+            // Mostrar el panel y botón correctos
+            if (tabName === 'proveedores') {
+                document.getElementById('tab-panel-proveedores').classList.add('active');
+                document.getElementById('tab-btn-proveedores').classList.add('active');
+            } else if (tabName === 'insumos') {
+                document.getElementById('tab-panel-insumos').classList.add('active');
+                document.getElementById('tab-btn-insumos').classList.add('active');
+            }
+        }
+        
+        // --- NAVEGACIÓN DEL DASHBOARD (de CLIENTES.html) ---
+        function handleNavigation(pageId) {
+            console.log('Navegar a:', pageId);
+            // Esto asume que SCRIPT_URL está definida
+            try {
+                window.top.location.href = SCRIPT_URL + "?page=" + pageId;
+            } catch (e) {
+                console.error("Error al navegar:", e);
+                // Fallback por si SCRIPT_URL no está definida en la demo
+                if (pageId === 'INDEX') alert("Volver al Index (simulado)");
+            }
+        }
+
+        // --- INICIALIZACIÓN ---
+        window.onload = function() {
+            populateImages(); 
+            showTab('proveedores'); // Activar la primera pestaña por defecto
+        };
+    </script>
+
+</body>
+</html>
+

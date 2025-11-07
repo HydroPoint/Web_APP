@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- El título ahora es "Administración" -->
+    <title>Administración del Sistema</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Estilos de CLIENTES.html (CSS) -->
+    <style>
+        /* Estilos base del dashboard */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* bg-gray-100 */
+        }
+        
+        /* Estilo para los inputs deshabilitados */
+        input:disabled, textarea:disabled, select:disabled {
+            background-color: #e5e7eb; /* bg-gray-200 */
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Estilos para el spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #00008B; /* Color azul oscuro del tema */
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* --- ESTILO DE PESTAÑAS (Tabs) --- */
+        .tab-button {
+            transition: all 0.2s ease;
+            border-bottom: 2px solid transparent;
+            padding: 1rem 0.5rem; 
+            font-weight: 500;
+            color: #6b7280; /* text-gray-500 */
+        }
+        .tab-button:hover {
+            color: #374151; /* text-gray-700 */
+        }
+        .tab-button.active {
+            border-color: #00008B; /* Nuestro azul principal */
+            color: #00008B;
+        }
+        .tab-panel {
+            display: none;
+        }
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* --- ESTILOS CHECKBOX (ADAPTADO A RADIO Y TEMA AZUL) --- */
+        /* Estos estilos se copian por si se necesitan, aunque el CRUD de admin usará <select> por simplicidad */
+        .checkbox-container {
+         display: inline-block;
+         margin-right: 8px; 
+         user-select: none;
+        }
+        .task-radio { display: none; }
+        .checkbox-label {
+         display: flex;
+         align-items: center;
+         cursor: pointer;
+         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         font-size: 16px;
+         color: #374151;
+         font-weight: 500;
+         transition: all 0.2s ease;
+         padding: 8px 12px; 
+         border-radius: 8px;
+        }
+        .checkbox-label:hover {
+         background: rgba(59, 130, 246, 0.05); 
+         color: #111827;
+        }
+        .checkbox-box {
+         position: relative;
+         width: 22px;
+         height: 22px;
+         border: 2px solid #d1d5db;
+         border-radius: 50%; /* CAMBIADO A CÍRCULO para radio */
+         margin-right: 12px;
+         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+         background: #ffffff;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         overflow: visible;
+        }
+        .checkbox-fill {
+         position: absolute;
+         top: 0;
+         left: 0;
+         width: 100%;
+         height: 100%;
+         background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
+         transform: scale(0);
+         transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+         border-radius: 50%; /* CAMBIADO A CÍRCULO */
+         opacity: 0;
+        }
+        .checkmark {
+         position: relative;
+         z-index: 2;
+         opacity: 0;
+         transform: scale(0.3) rotate(20deg);
+         transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        .check-icon {
+         width: 14px;
+         height: 14px;
+         fill: white;
+         filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+        }
+        .success-ripple {
+         position: absolute;
+         top: 50%;
+         left: 50%;
+         width: 0;
+         height: 0;
+         background: rgba(59, 130, 246, 0.4); /* Azul-500 */
+         border-radius: 50%;
+         transform: translate(-50%, -50%);
+         opacity: 0;
+         pointer-events: none;
+        }
+        .checkbox-text {
+         transition: all 0.3s ease;
+         position: relative;
+        }
+        .checkbox-text::after {
+         content: "";
+         position: absolute;
+         top: 50%;
+         left: 0;
+         width: 0;
+         height: 2px;
+         background: #6b7280;
+         transition: width 0.4s ease;
+         transform: translateY(-50%);
+        }
+        .checkbox-label:hover .checkbox-box {
+         border-color: #2563eb; /* Azul-600 */
+         box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); /* Azul-500 */
+        }
+        .task-radio:checked + .checkbox-label .checkbox-box {
+         border-color: #2563eb; /* Azul-600 */
+         background: #2563eb; /* Azul-600 */
+         box-shadow:
+           0 4px 12px rgba(59, 130, 246, 0.3), /* Azul-500 */
+           0 0 0 2px rgba(59, 130, 246, 0.2); /* Azul-500 */
+        }
+        .task-radio:checked + .checkbox-label .checkbox-fill {
+         transform: scale(1);
+         opacity: 1;
+        }
+        .task-radio:checked + .checkbox-label .checkmark {
+         opacity: 1;
+         transform: scale(1) rotate(0deg);
+         animation: checkPop 0.3s ease-out 0.2s;
+        }
+        .task-radio:checked + .checkbox-label .success-ripple {
+         animation: rippleSuccess 0.6s ease-out;
+        }
+        .task-radio:checked + .checkbox-label .checkbox-text {
+         color: #1f2937; /* Texto normal, no grisado */
+        }
+        .task-radio:checked + .checkbox-label .checkbox-text::after {
+         width: 0; /* No tachar */
+        }
+        .checkbox-label:active .checkbox-box {
+         transform: scale(0.95);
+        }
+        @keyframes checkPop {
+         0% { transform: scale(1) rotate(0deg); }
+         50% { transform: scale(1.2) rotate(-5deg); }
+         100% { transform: scale(1) rotate(0deg); }
+        }
+        @keyframes rippleSuccess {
+         0% { width: 0; height: 0; opacity: 0.6; }
+         70% { width: 50px; height: 50px; opacity: 0.3; }
+         100% { width: 60px; height: 60px; opacity: 0; }
+        }
+        /* --- FIN: ESTILOS CHECKBOX --- */
+        
+        /* Estilos de grupo de radio (Opacidad) */
+        .radio-group .checkbox-label {
+             opacity: 1;
+             transition: opacity 0.3s ease;
+        }
+        .radio-group:has(.task-radio:checked) .checkbox-label {
+             opacity: 0.5;
+        }
+        .radio-group .task-radio:checked + .checkbox-label {
+             opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-blue-600">
+
+    <div class="w-full max-w-7xl mx-auto p-6">
+        
+        <!-- ===== HEADER (Tomado de CLIENTES.html) ===== -->
+        <div class="w-full flex justify-between items-center pt-8 pb-10">
+            <!-- Logo Interactivo -->
+            <img data-src-key="logo" alt="Logo" 
+                 class="h-10 w-auto cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-95 hover:drop-shadow-lg" 
+                 onclick="handleNavigation('INDEX')">
+            
+            <!-- Título actualizado -->
+            <h1 id="header-title" class="text-3xl font-bold text-white hidden md:block">Administración del Sistema</h1>
+            
+            <!-- Botón de Volver (Tomado de CLIENTES.html) -->
+            <button
+              id="btn-back-to-search" 
+              onclick="handleNavigation('INDEX')"
+              type="button"
+              class="bg-white text-center w-48 rounded-2xl h-14 relative text-blue-700 text-xl font-semibold border-4 border-white group"
+            >
+              <div
+                class="bg-blue-600 rounded-xl h-12 w-1/4 grid place-items-center absolute left-0 top-0 group-hover:w-full z-10 duration-500"
+              >
+                <svg
+                  class="w-6 h-6"
+                  viewBox="0 0 1024 1024"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fill="#FFFFFF" 
+                    d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z"
+                  ></path>
+                  <path
+                    fill="#FFFFFF"
+                    d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z"
+                  ></path>
+                </svg>
+              </div>
+              <p class="translate-x-4 transition-transform duration-500 group-hover:translate-x-0">Volver</p> 
+            </button>
+        </div>
+        
+        <!-- ===== NUEVO CONTENEDOR DE PESTAÑAS ===== -->
+        <div class="bg-white rounded-lg shadow-md">
+            
+            <!-- Headers de Pestañas -->
+            <div class="border-b border-gray-200">
+                <nav class="flex gap-6 px-6" aria-label="Tabs">
+                    <button onclick="showTab('config')" id="tab-btn-config" class="tab-button active">
+                        Configuración Global
+                    </button>
+                    <button onclick="showTab('users')" id="tab-btn-users" class="tab-button">
+                        Gestión de Usuarios
+                    </button>
+                </nav>
+            </div>
+            
+            <!-- ===== SECCIÓN 1: Panel de Configuración ===== -->
+            <div id="tab-panel-config" class="tab-panel active">
+                <div class="p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6">Configuración Global</h2>
+
+                    <!-- Spinner de carga de Configuración -->
+                    <div id="config-loading-spinner" class="flex justify-center items-center py-20">
+                        <div class="spinner" style="width: 48px; height: 48px;"></div>
+                    </div>
+
+                    <!-- Formulario de Configuración -->
+                    <form id="config-form" class="hidden">
+                        <div id="config-fields-container" class="space-y-4">
+                            <!-- Campos del formulario (IVA, Moneda, etc.) -->
+                            <div>
+                                <label for="config-empresa" class="block text-sm font-medium text-gray-700">Nombre de la Empresa</label>
+                                <input type="text" id="config-empresa" name="empresa" class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="config-nit" class="block text-sm font-medium text-gray-700">NIT de la Empresa</label>
+                                    <input type="text" id="config-nit" name="nit" class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                </div>
+                                <div>
+                                    <label for="config-iva" class="block text-sm font-medium text-gray-700">IVA (%)</label>
+                                    <input type="number" id="config-iva" name="iva" step="0.1" class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="config-moneda" class="block text-sm font-medium text-gray-700">Símbolo de Moneda (ej. $)</label>
+                                    <input type="text" id="config-moneda" name="moneda" class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                </div>
+                                <div>
+                                    <label for="config-logo" class="block text-sm font-medium text-gray-700">URL del Logo (Opcional)</label>
+                                    <input type="text" id="config-logo" name="logo" class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0" placeholder="https://...">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="config-direccion" class="block text-sm font-medium text-gray-700">Dirección/Datos Contacto</label>
+                                <textarea id="config-direccion" name="direccion" rows="2" class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0"></textarea>
+                            </div>
+
+                        </div>
+                        
+                        <p id="config-message" class="text-sm h-5 mt-4"></p>
+                        
+                        <!-- Botón de Guardar Configuración -->
+                        <div class="mt-6">
+                            <button type="submit" id="config-submit-button"
+                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center"
+                                    style="max-width: 300px;">
+                                <span id="config-submit-text">Guardar Configuración</span>
+                                <div id="config-submit-spinner" class="spinner hidden"></div>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ===== SECCIÓN 2: Panel de Gestión de Usuarios ===== -->
+            <div id="tab-panel-users" class="tab-panel">
+                <!-- Layout CRUD de 2 columnas (Form + Tabla) -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+                    
+                    <!-- Columna Izquierda: Formulario Buscar/Crear Usuario -->
+                    <div class="lg:col-span-1">
+                        <div class="bg-gray-50 rounded-lg shadow-inner p-6 sticky top-6">
+                            
+                            <!-- Toggle de Modo (Usuario) -->
+                            <div class="flex w-full rounded-lg bg-gray-200 p-1 mb-6">
+                                <button id="btn-user-mode-create" onclick="setUserMode('create')" class="w-1/2 bg-white rounded-md py-2 text-sm font-medium text-gray-800 shadow">
+                                    Crear / Editar
+                                </button>
+                                <button id="btn-user-mode-search" onclick="setUserMode('search')" class="w-1/2 rounded-md py-2 text-sm font-medium text-gray-500">
+                                    Buscar
+                                </button>
+                            </div>
+
+                            <!-- Formulario de Usuario -->
+                            <form id="user-form">
+                                <div class="space-y-4">
+                                    <!-- Contenedor de Búsqueda (Usuario) -->
+                                    <div id="user-search-container" class="hidden">
+                                        <label for="user-search-term" class="block text-sm font-medium text-gray-700">Buscar Usuario</label>
+                                        <input type="text" id="user-search-term" name="user-search-term"
+                                               placeholder="Nombre, Email o Rol..."
+                                               class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                    </div>
+                                    
+                                    <!-- Contenedor de Creación (Usuario) -->
+                                    <div id="user-create-container" class="space-y-4">
+                                        <!-- Campo oculto para ID de usuario (para edición) -->
+                                        <input type="hidden" id="user-id" name="user-id">
+
+                                        <div>
+                                            <label for="user-email" class="block text-sm font-medium text-gray-700">Email (Login)</label>
+                                            <input type="email" id="user-email" name="user-email" class="user-form-field w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                        </div>
+                                        <div>
+                                            <label for="user-nombre" class="block text-sm font-medium text-gray-700">Nombre Completo</label>
+                                            <input type="text" id="user-nombre" name="user-nombre" class="user-form-field w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                        </div>
+                                        <div>
+                                            <label for="user-rol" class="block text-sm font-medium text-gray-700">Rol</label>
+                                            <select id="user-rol" name="user-rol" class="user-form-field w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                                <option value="Vendedor">Vendedor</option>
+                                                <option value="Administrador">Administrador</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="user-password" class="block text-sm font-medium text-gray-700">Contraseña (solo al crear/actualizar)</label>
+                                            <input type="password" id="user-password" name="user-password" class="user-form-field w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0" placeholder="Dejar en blanco para no cambiar">
+                                        </div>
+                                    </div>
+                                    
+                                    <p id="user-form-message" class="text-sm h-5"></p>
+
+                                    <!-- GRUPO DE BOTONES DE ACCIÓN (Usuario) -->
+                                    <div class="flex gap-4">
+                                        <button type="button" id="user-form-cancel-button"
+                                                class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-4 rounded-lg transition-colors duration-300">
+                                            Limpiar
+                                        </button>
+                                        <button type="submit" id="user-form-submit-button"
+                                                class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center">
+                                            <span id="user-submit-text">Guardar Usuario</span>
+                                            <div id="user-submit-spinner" class="spinner hidden"></div>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Columna Derecha: Resultados (Usuarios) -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white rounded-lg shadow-md p-6">
+                            <h2 class="text-xl font-bold text-gray-800 mb-4">Lista de Usuarios</h2>
+                            <div id="user-results-message" class="hidden text-center text-gray-500 py-8">
+                                <p id="user-results-message-text">No se encontraron resultados.</p>
+                            </div>
+                            <div class="overflow-x-auto" id="user-table-container">
+                                <table class="w-full text-sm text-left text-gray-600">
+                                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                        <tr>
+                                            <th scope="col" class="px-6 py-3">Email (Login)</th>
+                                            <th scope="col" class="px-6 py-3">Nombre</th>
+                                            <th scope="col" class="px-6 py-3">Rol</th>
+                                            <th scope="col" class="px-6 py-3">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="user-results-table-body">
+                                        <tr class="bg-white border-b">
+                                            <td colspan="4" class="px-6 py-4 text-center text-gray-400">
+                                                Utiliza el formulario para buscar o crear usuarios.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+
+        </div> <!-- Fin del contenedor de pestañas -->
+
+    </div>
+    
+<script>
+    const SCRIPT_URL = '<?= url ?>';
+
+    // ==================================================================
+    // LISTADO CENTRAL DE IMÁGENES (Tomado de CLIENTES.html)
+    // ==================================================================
+    const imageConfig = {
+        logo: "https://i.postimg.cc/BQ2Sp0T4/Logotransparente.png"
+    };
+
+    function populateImages() {
+        const images = document.querySelectorAll('[data-src-key]');
+        images.forEach(img => {
+            const key = img.getAttribute('data-src-key');
+            if (imageConfig[key]) {
+                img.src = imageConfig[key];
+            }
+        });
+    }
+    // ==================================================================
+
+    // Estado de la UI
+    let currentConfigTab = 'config'; // 'config' o 'users'
+    let currentUserMode = 'create'; // 'create' o 'search'
+    let isConfigLoading = false;
+    let isUserFormLoading = false;
+    
+    // --- REFERENCIAS AL DOM (Globales) ---
+    const tabBtnConfig = document.getElementById('tab-btn-config');
+    const tabBtnUsers = document.getElementById('tab-btn-users');
+    const tabPanelConfig = document.getElementById('tab-panel-config');
+    const tabPanelUsers = document.getElementById('tab-panel-users');
+
+    // --- REFERENCIAS AL DOM (Configuración) ---
+    const configLoadingSpinner = document.getElementById('config-loading-spinner');
+    const configForm = document.getElementById('config-form');
+    const configFieldsContainer = document.getElementById('config-fields-container');
+    const configSubmitButton = document.getElementById('config-submit-button');
+    const configSubmitText = document.getElementById('config-submit-text');
+    const configSubmitSpinner = document.getElementById('config-submit-spinner');
+    const configMessage = document.getElementById('config-message');
+
+    // --- REFERENCIAS AL DOM (Usuarios) ---
+    const btnUserModeCreate = document.getElementById('btn-user-mode-create');
+    const btnUserModeSearch = document.getElementById('btn-user-mode-search');
+    const userSearchContainer = document.getElementById('user-search-container');
+    const userCreateContainer = document.getElementById('user-create-container');
+    const userFormFields = document.querySelectorAll('.user-form-field');
+    const userForm = document.getElementById('user-form');
+    const userFormSubmitButton = document.getElementById('user-form-submit-button');
+    const userSubmitText = document.getElementById('user-submit-text');
+    const userSubmitSpinner = document.getElementById('user-submit-spinner');
+    const userFormMessage = document.getElementById('user-form-message');
+    const userCancelButton = document.getElementById('user-form-cancel-button');
+    const userResultsTableBody = document.getElementById('user-results-table-body');
+    const userResultsMessage = document.getElementById('user-results-message');
+    const userResultsMessageText = document.getElementById('user-results-message-text');
+    const userTableContainer = document.getElementById('user-table-container');
+
+    /**
+     * Maneja el clic en las pestañas
+     */
+    function showTab(tabName) {
+        currentConfigTab = tabName;
+        if (tabName === 'config') {
+            tabPanelConfig.classList.add('active');
+            tabPanelUsers.classList.remove('active');
+            tabBtnConfig.classList.add('active');
+            tabBtnUsers.classList.remove('active');
+        } else if (tabName === 'users') {
+            tabPanelConfig.classList.remove('active');
+            tabPanelUsers.classList.add('active');
+            tabBtnConfig.classList.remove('active');
+            tabBtnUsers.classList.add('active');
+            
+            // Opcional: Cargar usuarios automáticamente al cambiar a la pestaña
+            // handleUserSearch(true); // 'true' para indicar una búsqueda de "todos"
+        }
+    }
+
+    // ==================================================================
+    // LÓGICA DE CONFIGURACIÓN (SECCIÓN 1)
+    // ==================================================================
+
+    /**
+     * Llama al backend para obtener la configuración actual
+     */
+    function loadGlobalConfig() {
+        configLoadingSpinner.classList.remove('hidden');
+        configForm.classList.add('hidden');
+        google.script.run
+            .withSuccessHandler(onLoadConfigSuccess)
+            .withFailureHandler(onLoadConfigFailure)
+            .getGlobalConfig();
+    }
+
+    function onLoadConfigSuccess(config) {
+        configLoadingSpinner.classList.add('hidden');
+        configForm.classList.remove('hidden');
+        
+        // Asumiendo que 'config' es un objeto {IVA: "19", Moneda: "$", ...}
+        if(config) {
+            document.getElementById('config-empresa').value = config.NombreEmpresa || '';
+            document.getElementById('config-nit').value = config.NIT || '';
+            document.getElementById('config-iva').value = config.IVA || '19';
+            document.getElementById('config-moneda').value = config.Moneda || '$';
+            document.getElementById('config-logo').value = config.LogoURL || '';
+            document.getElementById('config-direccion').value = config.Direccion || '';
+        }
+    }
+
+    function onLoadConfigFailure(error) {
+        configLoadingSpinner.classList.add('hidden');
+        configForm.classList.remove('hidden'); // Mostrar el formulario igual
+        showMessage('config-message', `Error al cargar config: ${error.message}`, 'red');
+    }
+
+    /**
+     * Maneja el envío del formulario de configuración
+     */
+    function handleConfigSave(e) {
+        e.preventDefault();
+        if (isConfigLoading) return;
+        
+        setConfigLoading(true);
+
+        const configObject = {
+            NombreEmpresa: document.getElementById('config-empresa').value,
+            NIT: document.getElementById('config-nit').value,
+            IVA: document.getElementById('config-iva').value,
+            Moneda: document.getElementById('config-moneda').value,
+            LogoURL: document.getElementById('config-logo').value,
+            Direccion: document.getElementById('config-direccion').value
+        };
+
+        google.script.run
+            .withSuccessHandler(onSaveConfigSuccess)
+            .withFailureHandler(onSaveConfigFailure)
+            .saveGlobalConfig(configObject);
+    }
+
+    function onSaveConfigSuccess(response) {
+        setConfigLoading(false);
+        if (response.success) {
+            showMessage('config-message', 'Configuración guardada exitosamente.', 'green');
+        } else {
+            showMessage('config-message', `Error: ${response.error || 'Desconocido'}`, 'red');
+        }
+    }
+
+    function onSaveConfigFailure(error) {
+        setConfigLoading(false);
+        showMessage('config-message', `Error al guardar: ${error.message}`, 'red');
+    }
+
+    function setConfigLoading(isLoadingState) {
+        isConfigLoading = isLoadingState;
+        configSubmitButton.disabled = isLoadingState;
+        if (isLoadingState) {
+            configSubmitText.classList.add('hidden');
+            configSubmitSpinner.classList.remove('hidden');
+        } else {
+            configSubmitText.classList.remove('hidden');
+            configSubmitSpinner.classList.add('hidden');
+        }
+    }
+
+    // ==================================================================
+    // LÓGICA DE USUARIOS (SECCIÓN 2)
+    // ==================================================================
+
+    /**
+     * Cambia entre los modos 'Buscar' y 'Crear' en la pestaña de usuarios
+     */
+    function setUserMode(mode) {
+        currentUserMode = mode;
+        userFormMessage.textContent = '';
+        
+        if (mode === 'create') {
+            userSearchContainer.classList.add('hidden');
+            userCreateContainer.classList.remove('hidden');
+            btnUserModeCreate.classList.add('bg-white', 'shadow');
+            btnUserModeCreate.classList.remove('text-gray-500');
+            btnUserModeSearch.classList.remove('bg-white', 'shadow');
+            btnUserModeSearch.classList.add('text-gray-500');
+            userSubmitText.textContent = 'Guardar Usuario';
+            userFormFields.forEach(field => field.disabled = false);
+            // Habilitar email solo si no hay ID (creando)
+            document.getElementById('user-email').disabled = !!document.getElementById('user-id').value;
+
+        } else { // 'search'
+            userSearchContainer.classList.remove('hidden');
+            userCreateContainer.classList.add('hidden');
+            btnUserModeSearch.classList.add('bg-white', 'shadow');
+            btnUserModeSearch.classList.remove('text-gray-500');
+            btnUserModeCreate.classList.remove('bg-white', 'shadow');
+            btnUserModeCreate.classList.add('text-gray-500');
+            userSubmitText.textContent = 'Buscar';
+            userFormFields.forEach(field => field.disabled = true);
+        }
+    }
+
+    /**
+     * Resetea el formulario de creación de usuario
+     */
+    function resetUserForm() {
+        userForm.reset();
+        userFormMessage.textContent = '';
+        document.getElementById('user-id').value = ''; // Limpiar ID oculto
+        setUserMode('create'); // Volver a modo creación
+    }
+
+    /**
+     * Maneja el envío del formulario (Buscar o Crear/Editar Usuario)
+     */
+    function handleUserFormSubmit(e) {
+        e.preventDefault();
+        if (isUserFormLoading) return;
+
+        if (currentUserMode === 'search') {
+            handleUserSearch();
+        } else {
+            handleUserSave();
+        }
+    }
+
+    /**
+     * Lógica de Búsqueda de Usuario
+     */
+    function handleUserSearch(searchAll = false) {
+        const searchTerm = searchAll ? "" : document.getElementById('user-search-term').value;
+        
+        if (!searchAll && (!searchTerm || searchTerm.trim() === "")) {
+            showMessage('user-form-message', 'Por favor ingresa un término de búsqueda.', 'red');
+            return;
+        }
+
+        setUserFormLoading(true);
+        google.script.run
+            .withSuccessHandler(onUserSearchSuccess)
+            .withFailureHandler(onUserSearchFailure)
+            .getUsersAdmin(searchTerm); // Asumimos que "" (vacío) devuelve todos
+    }
+
+    function onUserSearchSuccess(results) {
+        setUserFormLoading(false);
+        populateUserTable(results);
+    }
+    
+    function populateUserTable(results) {
+        if (results && results.length > 0) {
+            userTableContainer.classList.remove('hidden');
+            userResultsMessage.classList.add('hidden');
+            userResultsTableBody.innerHTML = ''; // Limpiar tabla
+            
+            results.forEach(u => {
+                const row = document.createElement('tr');
+                row.className = 'bg-white border-b hover:bg-gray-50';
+                
+                // Sanitizar datos
+                const email = u.Email || 'N/A';
+                const nombre = u.Nombre || 'N/A';
+                const rol = u.Rol || 'N/A';
+                const userId = u.USER_ID || '';
+
+                // Pasamos el objeto 'u' como un string JSON al botón
+                const userObjectString = JSON.stringify(u);
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${email}</td>
+                    <td class="px-6 py-4">${nombre}</td>
+                    <td class="px-6 py-4">${rol}</td>
+                    <td class="px-6 py-4">
+                        <button type="button" onclick='editUser(${userObjectString})' class="font-medium text-blue-600 hover:underline">
+                            Editar
+                        </button>
+                    </td>
+                `;
+                userResultsTableBody.appendChild(row);
+            });
+        } else {
+            userTableContainer.classList.add('hidden');
+            userResultsMessage.classList.remove('hidden');
+            userResultsMessageText.textContent = 'No se encontraron usuarios con ese criterio.';
+        }
+    }
+
+    function onUserSearchFailure(error) {
+        setUserFormLoading(false);
+        showMessage('user-form-message', `Error al buscar: ${error.message}`, 'red');
+        userTableContainer.classList.add('hidden');
+        userResultsMessage.classList.remove('hidden');
+        userResultsMessageText.textContent = `Error al buscar: ${error.message}`;
+    }
+
+    /**
+     * Carga los datos de un usuario en el formulario para editarlo
+     */
+    function editUser(user) {
+        resetUserForm(); // Limpia y pone en modo 'create'
+        
+        document.getElementById('user-id').value = user.USER_ID || '';
+        document.getElementById('user-email').value = user.Email || '';
+        document.getElementById('user-nombre').value = user.Nombre || '';
+        document.getElementById('user-rol').value = user.Rol || 'Vendedor';
+        
+        // Deshabilitar email al editar
+        document.getElementById('user-email').disabled = true;
+
+        // Foco en el formulario
+        window.scrollTo({ top: userForm.offsetTop, behavior: 'smooth' });
+    }
+
+    /**
+     * Lógica de Creación/Edición de Usuario
+     */
+    function handleUserSave() {
+        const payload = {
+            USER_ID: document.getElementById('user-id').value, // Vacío si es nuevo
+            Email: document.getElementById('user-email').value,
+            Nombre: document.getElementById('user-nombre').value,
+            Rol: document.getElementById('user-rol').value,
+            Password: document.getElementById('user-password').value // Vacío si no se cambia
+        };
+
+        if (!payload.Email || !payload.Nombre) {
+            showMessage('user-form-message', 'Email y Nombre son obligatorios.', 'red');
+            return;
+        }
+
+        setUserFormLoading(true);
+        google.script.run
+            .withSuccessHandler(onUserSaveSuccess)
+            .withFailureHandler(onUserSaveFailure)
+            .saveUserAdmin(payload);
+    }
+
+    function onUserSaveSuccess(response) {
+        setUserFormLoading(false);
+        if (response.success) {
+            showMessage('user-form-message', `Usuario ${response.userId} guardado.`, 'green');
+            resetUserForm();
+            // Refrescar la lista de usuarios (buscando todos)
+            handleUserSearch(true);
+        } else {
+            showMessage('user-form-message', `Error: ${response.error || 'Error desconocido'}`, 'red');
+        }
+    }
+
+    function onUserSaveFailure(error) {
+        setUserFormLoading(false);
+        showMessage('user-form-message', `Error al guardar: ${error.message}`, 'red');
+    }
+
+    function setUserFormLoading(isLoadingState) {
+        isUserFormLoading = isLoadingState;
+        userFormSubmitButton.disabled = isLoadingState;
+        if (isLoadingState) {
+            userSubmitText.classList.add('hidden');
+            userSubmitSpinner.classList.remove('hidden');
+        } else {
+            userSubmitText.classList.remove('hidden');
+            userSubmitSpinner.classList.add('hidden');
+        }
+    }
+
+    // ==================================================================
+    // FUNCIONES UTILITARIAS (Tomadas de CLIENTES.html)
+    // ==================================================================
+
+    function showMessage(elementId, message, color) {
+        const el = document.getElementById(elementId);
+        el.textContent = message;
+        el.className = `text-sm h-5 ${color === 'red' ? 'text-red-500' : 'text-green-600'}`;
+        
+        if (color === 'green') {
+            setTimeout(() => { el.textContent = ''; }, 3000);
+        }
+    }
+    
+    // --- NAVEGACIÓN DEL DASHBOARD ---
+    function handleNavigation(pageId) {
+        console.log('Navegar a:', pageId);
+        window.top.location.href = SCRIPT_URL + "?page=" + pageId;
+    }
+
+    // --- INICIALIZACIÓN ---
+    window.onload = function() {
+        populateImages(); 
+        
+        // Pestaña de Configuración
+        configForm.addEventListener('submit', handleConfigSave);
+        
+        // Pestaña de Usuarios
+        userForm.addEventListener('submit', handleUserFormSubmit);
+        userCancelButton.addEventListener('click', resetUserForm);
+
+        // Estado inicial
+        showTab('config'); // Empezar en la pestaña de config
+        setUserMode('create'); // Poner el formulario de usuario en modo crear
+        
+        // Cargar la configuración global al iniciar
+        loadGlobalConfig();
+    };
+</script>
+
+</body>
+</html>

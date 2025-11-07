@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Campañas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        
+        input:disabled, textarea:disabled, select:disabled {
+            background-color: #e5e7eb;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #2563eb; /* Color azul del tema */
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* --- Estilos de Checkbox/Radio (Copiados de Clientes) --- */
+        .checkbox-container {
+          display: inline-block;
+          margin-right: 8px;
+          user-select: none;
+        }
+        .task-radio {
+          display: none;
+        }
+        .checkbox-label {
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          font-size: 16px;
+          color: #374151;
+          font-weight: 500;
+          transition: all 0.2s ease;
+          padding: 8px 12px;
+          border-radius: 8px;
+        }
+        .checkbox-label:hover {
+          background: rgba(59, 130, 246, 0.05);
+          color: #111827;
+        }
+        .checkbox-box {
+          position: relative;
+          width: 22px;
+          height: 22px;
+          border: 2px solid #d1d5db;
+          border-radius: 50%;
+          margin-right: 12px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          background: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: visible;
+        }
+        .checkbox-fill {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+          transform: scale(0);
+          transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+          border-radius: 50%;
+          opacity: 0;
+        }
+        .checkmark {
+          position: relative;
+          z-index: 2;
+          opacity: 0;
+          transform: scale(0.3) rotate(20deg);
+          transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        .check-icon {
+          width: 14px;
+          height: 14px;
+          fill: white;
+          filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+        }
+        .success-ripple {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 0;
+          height: 0;
+          background: rgba(59, 130, 246, 0.4);
+          border-radius: 50%;
+          transform: translate(-50%, -50%);
+          opacity: 0;
+          pointer-events: none;
+        }
+        .task-radio:checked + .checkbox-label .checkbox-box {
+          border-color: #2563eb;
+          background: #2563eb;
+          box-shadow:
+            0 4px 12px rgba(59, 130, 246, 0.3),
+            0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        .task-radio:checked + .checkbox-label .checkbox-fill {
+          transform: scale(1);
+          opacity: 1;
+        }
+        .task-radio:checked + .checkbox-label .checkmark {
+          opacity: 1;
+          transform: scale(1) rotate(0deg);
+          animation: checkPop 0.3s ease-out 0.2s;
+        }
+        .task-radio:checked + .checkbox-label .success-ripple {
+          animation: rippleSuccess 0.6s ease-out;
+        }
+        .checkbox-label:active .checkbox-box {
+          transform: scale(0.95);
+        }
+        @keyframes checkPop {
+          0% { transform: scale(1) rotate(0deg); }
+          50% { transform: scale(1.2) rotate(-5deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+        @keyframes rippleSuccess {
+          0% { width: 0; height: 0; opacity: 0.6; }
+          70% { width: 50px; height: 50px; opacity: 0.3; }
+          100% { width: 60px; height: 60px; opacity: 0; }
+        }
+        .radio-group:has(.task-radio:checked) .checkbox-label {
+            opacity: 0.5;
+        }
+        .radio-group .task-radio:checked + .checkbox-label {
+            opacity: 1;
+        }
+
+        /* --- INICIO: CSS de Preview de Chat (Escopado) --- */
+        .chat-preview-wrapper {
+            font-family: 'Red Hat Display', sans-serif;
+            font-weight: 400;
+            line-height: 1.25em;
+            letter-spacing: 0.025em;
+            color: #333;
+            background: #F7F7F7;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        .chat-preview-wrapper .center {
+            /* Quitado 'position: absolute' para que se centre en el div */
+            width: 100%;
+            max-width: 24rem; /* Ancho de tu .chat */
+            margin: 0 auto;
+        }
+        .chat-preview-wrapper .pic {
+            width: 4rem;
+            height: 4rem;
+            background-size: cover;
+            background-position: center;
+            border-radius: 50%;
+        }
+        .chat-preview-wrapper .contact {
+            position: relative;
+            margin-bottom: 1rem;
+            padding-left: 5rem;
+            height: 4.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .chat-preview-wrapper .contact .pic {
+            position: absolute;
+            left: 0;
+        }
+        .chat-preview-wrapper .contact .name {
+            font-weight: 500;
+            margin-bottom: 0.125rem;
+        }
+        .chat-preview-wrapper .contact .message, 
+        .chat-preview-wrapper .contact .seen {
+            font-size: 0.9rem;
+            color: #999;
+        }
+        .chat-preview-wrapper .chat {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 100%; /* Ocupa el 100% del .center */
+            height: 38rem;
+            max-height: 60vh; /* Límite de altura en popup */
+            z-index: 2;
+            box-sizing: border-box;
+            border-radius: 1rem;
+            background: white;
+            box-shadow: 0 0 8rem 0 rgba(0, 0, 0, 0.1), 0rem 2rem 4rem -3rem rgba(0, 0, 0, 0.5);
+        }
+        .chat-preview-wrapper .chat .contact.bar {
+            flex-basis: 3.5rem;
+            flex-shrink: 0;
+            margin: 1rem;
+            box-sizing: border-box;
+        }
+        .chat-preview-wrapper .chat .messages {
+            padding: 1rem;
+            background: #F7F7F7;
+            flex-shrink: 2;
+            overflow-y: auto;
+            box-shadow: inset 0 2rem 2rem -2rem rgba(0, 0, 0, 0.05), inset 0 -2rem 2rem -2rem rgba(0, 0, 0, 0.05);
+        }
+        .chat-preview-wrapper .chat .messages .time {
+            font-size: 0.8rem;
+            background: #EEE;
+            padding: 0.25rem 1rem;
+            border-radius: 2rem;
+            color: #999;
+            width: fit-content;
+            margin: 0 auto;
+        }
+        .chat-preview-wrapper .chat .messages .message {
+            box-sizing: border-box;
+            padding: 0.5rem 1rem;
+            margin: 1rem;
+            background: #FFF;
+            border-radius: 1.125rem 1.125rem 1.125rem 0;
+            min-height: 2.25rem;
+            width: fit-content;
+            max-width: 66%;
+            box-shadow: 0 0 2rem rgba(0, 0, 0, 0.075), 0rem 1rem 1rem -1rem rgba(0, 0, 0, 0.1);
+            /* Añadido para saltos de línea */
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .chat-preview-wrapper .chat .messages .message.parker {
+            margin: 1rem 1rem 1rem auto;
+            border-radius: 1.125rem 1.125rem 0 1.125rem;
+            background: #DCF8C6; /* Verde WhatsApp */
+            color: #333;
+        }
+        .chat-preview-wrapper .chat .input {
+            box-sizing: border-box;
+            flex-basis: 4rem;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            padding: 0 0.5rem 0 1.5rem;
+        }
+        .chat-preview-wrapper .chat .input i {
+            font-size: 1.5rem;
+            margin-right: 1rem;
+            color: #666;
+            cursor: pointer;
+        }
+        .chat-preview-wrapper .chat .input input {
+            border: none;
+            background-image: none;
+            background-color: white;
+            padding: 0.5rem 1rem;
+            margin-right: 1rem;
+            border-radius: 1.125rem;
+            flex-grow: 2;
+            box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1), 0rem 1rem 1rem -1rem rgba(0, 0, 0, 0.2);
+            font-family: 'Red Hat Display', sans-serif;
+            font-weight: 400;
+            letter-spacing: 0.025em;
+        }
+        .chat-preview-wrapper .chat .input input::placeholder {
+            color: #999;
+        }
+        .chat-preview-wrapper .pic.stark { 
+            background-image: url('https://i.postimg.cc/BQ2Sp0T4/Logotransparente.png'); /* Tu Logo */
+        }
+        /* --- FIN: CSS de Preview de Chat (Escopado) --- */
+
+        /* --- Estilos para Popups (Previsualización) --- */
+        .popup-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 60;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .popup-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .popup-content {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 600px;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        .popup-overlay.active .popup-content {
+            transform: scale(1);
+        }
+
+    </style>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+<link href="https://fonts.googleapis.com/css?family=Red+Hat+Display:400,500,900&display=swap" rel="stylesheet">
+    
+</head>
+<body class="bg-blue-600">
+
+    <div class="w-full max-w-7xl mx-auto p-6" >
+        
+        <div class="w-full flex justify-between items-center pt-8 pb-10">
+            <img data-src-key="logo" alt="Logo" 
+                 class="h-10 w-auto cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-95 hover:drop-shadow-lg" 
+                 onclick="handleNavigation('INDEX')">
+            
+            <h1 id="header-title" class="text-3xl font-bold text-white hidden md:block">Gestión de Campañas</h1>
+            
+            <button
+              id="btn-back-to-clients" 
+              onclick="handleNavigation('CLIENTES')"
+              type="button"
+              class="bg-white text-center w-48 rounded-2xl h-14 relative text-blue-700 text-xl font-semibold border-4 border-white group"
+            >
+              <div
+                class="bg-blue-600 rounded-xl h-12 w-1/4 grid place-items-center absolute left-0 top-0 group-hover:w-full z-10 duration-500"
+              >
+                <svg class="w-6 h-6" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+                  <path fill="#FFFFFF" d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z"></path>
+                  <path fill="#FFFFFF" d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z"></path>
+                </svg>
+              </div>
+              <p class="translate-x-4 transition-transform duration-500 group-hover:translate-x-0">Clientes</p> 
+            </button>
+        </div>
+        
+        <div class="flex flex-col md:flex-row gap-10">
+            
+            <div class="md:w-72 flex-shrink-0">
+                <div class="bg-white rounded-lg shadow-md p-6 sticky top-6">
+                    
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                        <i class="fa-solid fa-rocket text-blue-600 me-2"></i>
+                        Crear Nueva Campaña
+                    </h2>
+
+                    <form id="campaign-form">
+                        <div class="space-y-5">
+                            
+                            <div>
+                                <label for="nombre_campana" class="block text-sm font-medium text-gray-700">Nombre de la Campaña</label>
+                                <input type="text" id="nombre_campana" name="nombre_campana" class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0" placeholder="Ej: Lanzamiento Black Friday">
+                            </div>
+                            <div>
+                                <label for="asociacion" class="block text-sm font-medium text-gray-700">Asociar con (Opcional)</label>
+                                <select id="asociacion" name="asociacion" class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                    <option value="General">Campaña General</option>
+                                    <option value="Producto">Producto Específico</option>
+                                    <option value="Promocion">Promoción Específica</option>
+                                    <option value="Kit">Kit Específico</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Campaña</label>
+                                <div class="flex flex-nowrap items-center radio-group">
+                                    <div class="checkbox-container">
+                                        <input type="radio" id="tipo-wa" name="tipo_campana" value="WhatsApp" class="task-radio" checked />
+                                        <label for="tipo-wa" class="checkbox-label">
+                                            <div class="checkbox-box"><div class="checkbox-fill"></div><div class="checkmark"><svg viewBox="0 0 24 24" class="check-icon"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"></path></svg></div><div class="success-ripple"></div></div>
+                                            <span class="checkbox-text"><i class="fa-brands fa-whatsapp text-green-500 me-2"></i>WhatsApp</span>
+                                        </label>
+                                    </div>
+                                    <div class="checkbox-container">
+                                        <input type="radio" id="tipo-email" name="tipo_campana" value="Email" class="task-radio" />
+                                        <label for="tipo-email" class="checkbox-label">
+                                            <div class="checkbox-box"><div class="checkbox-fill"></div><div class="checkmark"><svg viewBox="0 0 24 24" class="check-icon"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"></path></svg></div><div class="success-ripple"></div></div>
+                                            <span class="checkbox-text"><i class="fa-solid fa-envelope text-red-500 me-2"></i>Email</span>
+                                        </label>
+                                    </div>
+                                    </div>
+                            </div>
+
+                            <div>
+                                <label for="segmento" class="block text-sm font-medium text-gray-700">Segmento de Clientes</label>
+                                <select id="segmento" name="segmento" class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                    <option value="Todos">Todos los Clientes (Marketing=Sí)</option>
+                                    <option value="Estado_Activo">Solo Activos</option>
+                                    <option value="Estado_Dormido">Solo Dormidos</option>
+                                    <option value="Estado_VIP">Solo VIP</option>
+                                    <option value="Tags">Por Tags</option>
+                                </select>
+                            </div>
+                            
+                            <div id="tags-container" class="hidden">
+                                <label for="segmento_tags" class="block text-sm font-medium text-gray-700">Tags (separados por coma)</label>
+                                <input type="text" id="segmento_tags" name="segmento_tags" class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0" placeholder="Ej: VIP, Papel Orgánico">
+                            </div>
+
+                            <div>
+                                <label for="plantilla" class="block text-sm font-medium text-gray-700">Plantilla de Mensaje</label>
+                                <select id="plantilla" name="plantilla" class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                    <option value="">-- Sin Plantilla (Mensaje Manual) --</option>
+                                    <option value="PLANTILLA_BIENVENIDA_1">Plantilla Bienvenida 1</option>
+                                    <option value="PLANTILLA_PROMO_BLACKFRIDAY">Promo Black Friday</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="mensaje" class="block text-sm font-medium text-gray-700">Mensaje Personalizado</label>
+                                <textarea id="mensaje" name="mensaje" rows="4" class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0" placeholder="Escribe tu mensaje... Usa {{NOMBRE}} para personalizar."></textarea>
+                                <p class="text-xs text-gray-500 mt-1">Si seleccionas una plantilla, este mensaje se ignorará.</p>
+                            </div>
+                            <div>
+                                <button type="button" id="toggle-utm-btn" class="w-full text-left text-sm font-medium text-blue-600 hover:text-blue-700">
+                                    <i class="fa-solid fa-link fa-fw me-1"></i>
+                                    Añadir Parámetros de Seguimiento (UTM)
+                                    <i class="fa-solid fa-chevron-down fa-fw ms-1" id="utm-chevron"></i>
+                                </button>
+                            </div>
+
+                            <div id="utm-container" class="hidden space-y-4 p-4 bg-gray-50 rounded-lg border">
+                                <p class="text-xs text-gray-600">Esto generará un enlace único para tu campana. La `utm_campaign` se tomará del nombre de la campana.</p>
+                                
+                                <div>
+                                    <label for="utm_source" class="block text-sm font-medium text-gray-700">Fuente (utm_source)</label>
+                                    <input type="text" id="utm_source" name="utm_source" class="w-full mt-1 px-3 py-2 rounded-lg bg-white border-gray-200 focus:border-blue-500 focus:bg-white focus:ring-0" placeholder="Ej: whatsapp, email, facebook">
+                                </div>
+                                <div>
+                                    <label for="utm_medium" class="block text-sm font-medium text-gray-700">Medio (utm_medium)</label>
+                                    <input type="text" id="utm_medium" name="utm_medium" class="w-full mt-1 px-3 py-2 rounded-lg bg-white border-gray-200 focus:border-blue-500 focus:bg-white focus:ring-0" placeholder="Ej: cpc, social, newsletter">
+                                </div>
+                                <div>
+                                    <label for="utm_content" class="block text-sm font-medium text-gray-700">Contenido (utm_content)</label>
+                                    <input type="text" id="utm_content" name="utm_content" class="w-full mt-1 px-3 py-2 rounded-lg bg-white border-gray-200 focus:border-blue-500 focus:bg-white focus:ring-0" placeholder="Ej: boton_rojo, promo_2x1">
+                                </div>
+                                <div>
+                                    <label for="utm_term" class="block text-sm font-medium text-gray-700">Término (utm_term)</label>
+                                    <input type="text" id="utm_term" name="utm_term" class="w-full mt-1 px-3 py-2 rounded-lg bg-white border-gray-200 focus:border-blue-500 focus:bg-white focus:ring-0" placeholder="Ej: (para anuncios) papel_organico">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="fecha_envio" class="block text-sm font-medium text-gray-700">Fecha Envío</label>
+                                    <input type="date" id="fecha_envio" name="fecha_envio" class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                </div>
+                                <div>
+                                    <label for="hora_envio" class="block text-sm font-medium text-gray-700">Hora Envío</label>
+                                    <input type="time" id="hora_envio" name="hora_envio" class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500 -mt-3">Deja en blanco para enviar inmediatamente.</p>
+
+
+                            <p id="form-message" class="text-sm h-5"></p>
+
+                            <div class="space-y-3 pt-4">
+                                <button type="button" id="btn-preview"
+                                        class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center">
+                                    <i class="fa-solid fa-eye me-2"></i>
+                                    Previsualizar Campaña
+                                </button>
+                                <button type="submit" id="form-submit-button"
+                                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center">
+                                    <span id="submit-text">Lanzar o Programar</span>
+                                    <div id="submit-spinner" class="spinner hidden"></div>
+                                </button>
+                                <button type="button" id="btn-cancel-edit"
+                                        onclick="resetForm()"
+                                        class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-300 hidden">
+                                    Cancelar Edición
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="flex-1 min-w-0 space-y-6">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-bold text-gray-800">
+                            <i class="fa-solid fa-list-check text-blue-600 me-2"></i>
+                            Resumen de Campañas
+                        </h2>
+                        <button onclick="loadCampaigns(true)" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-colors duration-300 text-sm">
+                            <i class="fa-solid fa-sync me-2"></i>Actualizar
+                        </button>
+                    </div>
+
+                    <div id="campaigns-table-container" class="overflow-y-auto overflow-x-hidden h-[65vh] shadow-inner bg-gray-50 rounded-lg">
+                        <table class="w-full text-sm text-left text-gray-600">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0 z-10">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">Nombre Campaña</th>
+                                    <th scope="col" class="px-6 py-3">Estado</th>
+                                    <th scope="col" class="px-6 py-3">Fecha</th>
+                                    <th scope="col" class="px-6 py-3">Clics</th>
+                                    <th scope="col" class="px-6 py-3">Conv.</th>
+                                    <th scope="col" class="px-6 py-3">Costo/Res.</th>
+                                    <th scope="col" class="px-6 py-3 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="campaigns-table-body" class="divide-y">
+                                <tr class="bg-white border-b">
+                                    <td colspan="7" class="px-6 py-4 text-center text-gray-400">
+                                        <div class="spinner mx-auto"></div>
+                                        Cargando campanas...
+                                    </td>
+                                </tr>
+                                </tbody>
+                        </table>
+                    </div>
+                    
+                    <div id="campaigns-results-message" class="hidden text-center text-gray-500 py-8">
+                        <p id="campaigns-results-message-text">No se encontraron campanas.</p>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <div id="preview-popup" class="popup-overlay">
+        <div class="popup-content">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">Previsualizar Campaña</h3>
+            
+            <div class="space-y-4">
+                <div>
+                    <h4 class="text-sm font-medium text-gray-500">Nombre</h4>
+                    <p id="preview-nombre" class="text-gray-800 font-semibold"></p>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Tipo</h4>
+                        <p id="preview-tipo" class="text-gray-800"></p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Segmento</h4>
+                        <p id="preview-segmento" class="text-gray-800"></p>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-sm font-medium text-gray-500">Mensaje (Ejemplo)</h4>
+                    <blockquote idid="preview-mensaje" class="mt-1 p-4 bg-gray-100 rounded-lg border-l-4 border-blue-500 text-gray-700 whitespace-pre-wrap">
+                        </blockquote>
+                    <p id="preview-plantilla-aviso" class="text-xs text-gray-500 mt-1 hidden"></p>
+                </div>
+
+                <div>
+                    <h4 class="text-sm font-medium text-gray-500">Programación</h4>
+                    <p id="preview-programacion" class="text-gray-800"></p>
+                </div>
+            </div>
+
+            <hr class="my-6">
+
+            <div class="flex justify-end gap-3">
+                <button onclick="hidePreview()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors duration-300">
+                    Cancelar
+                </button>
+                <button onclick="handleFormSubmit(event, true)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300">
+                    <i class="fa-solid fa-paper-plane me-2"></i>Confirmar y Enviar
+                </button>
+            </div>
+        </div>
+    </div>
+<script>
+        const SCRIPT_URL = '<?= url ?>';
+
+        // ==================================================================
+        // LISTADO CENTRAL DE IMÁGENES
+        // ==================================================================
+        const imageConfig = {
+            logo: "https://i.postimg.cc/BQ2Sp0T4/Logotransparente.png"
+        };
+
+        function populateImages() {
+            const images = document.querySelectorAll('[data-src-key]');
+            images.forEach(img => {
+                const key = img.getAttribute('data-src-key');
+                if (imageConfig[key]) {
+                    img.src = imageConfig[key];
+                }
+            });
+        }
+        // ==================================================================
+
+       // Estado de la UI
+        let isLoading = false;
+        let MODO_FORMULARIO = 'create'; // 'create' o 'edit'
+        let ID_EDICION = null; // ID de la campana que se está editando
+
+        // --- REFERENCIAS AL DOM ---
+        // (Se definen dentro de window.onload para asegurar que existan)
+
+        // --- REFERENCIAS AL DOM ---
+        // (Se definen dentro de window.onload para asegurar que existan)
+
+        // --- LÓGICA DE INTERACTIVIDAD DEL FORMULARIO ---
+
+        /**
+         * Muestra u oculta el campo de Tags basado en la selección del segmento
+         */
+        function toggleTagsInput() {
+            const segmentoSelect = document.getElementById('segmento'); // Definir aquí
+            const tagsContainer = document.getElementById('tags-container'); // Definir aquí
+            
+            if (segmentoSelect && tagsContainer) {
+                if (segmentoSelect.value === 'Tags') {
+                    tagsContainer.classList.remove('hidden');
+                } else {
+                    tagsContainer.classList.add('hidden');
+                }
+            }
+        }
+
+        /**
+         * Lógica de Carga Inicial de Campañas
+         */
+        function loadCampaigns(isManualRefresh = false) {
+            if (!isManualRefresh) {
+                setLoading(true); // Solo mostrar spinner grande en carga inicial
+            }
+            // Asegurarse de que google.script.run existe
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler(onLoadCampaignsSuccess)
+                    .withFailureHandler(onLoadCampaignsFailure)
+                    .getCampaigns(); // Debes crear esta función en .gs
+            } else {
+                console.error("google.script.run no está definido. Asegúrate de ejecutar esto en Google Apps Script.");
+                onLoadCampaignsFailure({ message: "Entorno de script no válido." });
+            }
+        }
+        
+ function onLoadCampaignsSuccess(results) {
+            setLoading(false);
+            const campaignsTableBody = document.getElementById('campaigns-table-body');
+            const campaignsTableContainer = document.getElementById('campaigns-table-container');
+            const campaignsResultsMessage = document.getElementById('campaigns-results-message');
+            const campaignsResultsMessageText = document.getElementById('campaigns-results-message-text');
+
+            campaignsTableBody.innerHTML = ''; // Limpiar spinner de carga
+
+            if (results && results.length > 0) {
+                campaignsTableContainer.classList.remove('hidden');
+                campaignsResultsMessage.classList.add('hidden');
+                
+                results.forEach(c => {
+                    // Asegurarse de que 'c' es un objeto válido, a veces GSheet devuelve filas vacías
+                    if (!c || !c.CAMP_ID) return; 
+
+                    const row = document.createElement('tr');
+                    row.className = 'bg-white border-b hover:bg-gray-50';
+                    
+                    let estadoBadge = '';
+                    const estado = (c.Estado || 'Borrador').toLowerCase(); // Normalizar
+                    let iconPause = 'fa-pause';
+                    let titlePause = 'Pausar';
+                    let colorPause = 'text-yellow-600 hover:text-yellow-800';
+
+                    if (estado === 'enviada') {
+                        estadoBadge = `<span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full"><i class="fa-solid fa-check-circle me-1"></i>Enviada</span>`;
+                    } else if (estado === 'programada') {
+                        estadoBadge = `<span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full"><i class="fa-solid fa-clock me-1"></i>Programada</span>`;
+                    } else if (estado === 'pausada') {
+                        estadoBadge = `<span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full"><i class="fa-solid fa-pause-circle me-1"></i>Pausada</span>`;
+                        iconPause = 'fa-play'; // Cambiar icono a "Reanudar"
+                        titlePause = 'Reanudar';
+                        colorPause = 'text-green-600 hover:text-green-800';
+                    } else { // Borrador, Enviando, etc.
+                        estadoBadge = `<span class="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full"><i class="fa-solid fa-pencil me-1"></i>${c.Estado || 'Borrador'}</span>`;
+                    }
+// --- INICIO DEL BLOQUE NUEVO ---
+                    // Lógica para desactivar el botón de editar si no está en borrador
+                    // (Usa tu variable 'estado' existente)
+                    const puedeEditar = estado === 'borrador'; 
+                    const editClasses = puedeEditar 
+                      ? 'text-blue-600 hover:text-blue-800' 
+                      : 'text-gray-400 cursor-not-allowed';
+                    const editTitle = puedeEditar 
+                      ? 'Editar Campaña' 
+                      : 'Solo se pueden editar campanas en "Borrador"';
+                    // --- FIN DEL BLOQUE NUEVO ---
+                    // Formatear fecha (si existe)
+                    let fechaStr = 'N/A';
+                    if (c.Fecha_Envio) {
+                        try {
+                            fechaStr = new Date(c.Fecha_Envio).toLocaleDateString('es-CO', {
+                                year: 'numeric', month: 'short', day: 'numeric'
+                            });
+                        } catch(e) { fechaStr = c.Fecha_Envio; } // Dejarla como está si falla
+                    }
+
+                    row.innerHTML = `
+                        <td class="px-6 py-4 font-medium text-gray-900">${c.Nombre || 'N/A'}</td>
+                        <td class="px-6 py-4">${estadoBadge}</td>
+                        <td class="px-6 py-4">${fechaStr}</td>
+                        <td class="px-6 py-4 font-medium text-gray-800">${c.Clics || 0}</td>
+                        <td class="px-6 py-4 font-medium text-gray-800">${c.Conversiones || 0}</td>
+                        <td class="px-6 py-4 font-medium text-gray-800">$${c.Costo_Resultado || '0.00'}</td>
+                        <td class="px-6 py-4 text-center space-x-2">
+                            
+                                                        <button data-id="${c.CAMP_ID}" data-estado="${estado}" data-action="edit" class="${editClasses} p-1" title="${editTitle}" ${!puedeEditar ? 'disabled' : ''}>
+                                <i class="fa-solid fa-pencil fa-fw"></i>
+                            </button>
+                            
+                                                        <button data-id="${c.CAMP_ID}" data-action="duplicate" class="text-purple-600 hover:text-purple-800 p-1" title="Duplicar Campaña">
+                                <i class="fa-solid fa-copy fa-fw"></i>
+                            </button>
+                            
+                                                        <button data-id="${c.CAMP_ID}" data-action="ver-metricas" class="text-gray-600 hover:text-gray-800 p-1" title="Ver Detalles/Métricas">
+                                <i class="fa-solid fa-chart-bar fa-fw"></i>
+                            </button>
+                                                        <button data-id="${c.CAMP_ID}" data-estado="${estado}" data-action="pausar" class="${colorPause} p-1" title="${titlePause}">
+                                <i class="fa-solid ${iconPause} fa-fw"></i>
+                            </button>
+                            <button data-id="${c.CAMP_ID}" data-action="eliminar" class="text-red-600 hover:text-red-800 p-1" title="Eliminar">
+                                <i class="fa-solid fa-trash fa-fw"></i>
+                            </button>
+                        </td>
+                    `;
+                    campaignsTableBody.appendChild(row);
+                });
+            } else {
+                campaignsTableContainer.classList.add('hidden');
+                campaignsResultsMessage.classList.remove('hidden');
+                campaignsResultsMessageText.textContent = 'Aún no has creado ninguna campana.';
+            }
+        }
+
+        function onLoadCampaignsFailure(error) {
+            setLoading(false);
+            const campaignsTableContainer = document.getElementById('campaigns-table-container');
+            const campaignsResultsMessage = document.getElementById('campaigns-results-message');
+            const campaignsResultsMessageText = document.getElementById('campaigns-results-message-text');
+
+            if(campaignsTableContainer) campaignsTableContainer.classList.add('hidden');
+            if(campaignsResultsMessage) campaignsResultsMessage.classList.remove('hidden');
+            if(campaignsResultsMessageText) campaignsResultsMessageText.textContent = `Error al cargar campanas: ${error.message}`;
+        }
+
+/**
+         * Maneja el envío del formulario (Crear O ACTUALIZAR Campaña)
+         */
+        function handleFormSubmit(e, isFromPreview = false) {
+            if (e) e.preventDefault();
+            if (isLoading && !isFromPreview) return; 
+
+            const campaignForm = document.getElementById('campaign-form');
+            const formData = new FormData(campaignForm);
+            
+            // --- ¡PAYLOAD ACTUALIZADO! ---
+            const payload = {
+                // Datos del formulario
+                Nombre: formData.get('nombre_campana'),
+                Asociacion: formData.get('asociacion'), 
+                Tipo: formData.get('tipo_campana'),
+                Segmento: formData.get('segmento'), // .gs lo mapea a Segmento_Cliente
+                Tags: formData.get('segmento') === 'Tags' ? formData.get('segmento_tags') : '',
+                Plantilla: formData.get('plantilla'),
+                Contenido: formData.get('mensaje'), // (Nuevo nombre: Mensaje -> Contenido)
+                Fecha_Envio: formData.get('fecha_envio'),
+                Hora_Prog: formData.get('hora_envio'), // (Nuevo nombre: Hora_Envio -> Hora_Prog)
+                utm_source: formData.get('utm_source'),
+                utm_medium: formData.get('utm_medium'),
+                utm_content: formData.get('utm_content'),
+                utm_term: formData.get('utm_term'),
+                
+                Preview: '', 
+            };
+            // --- FIN PAYLOAD ACTUALIZADO ---
+
+            if (!payload.Nombre) {
+                showMessage('form-message', 'El nombre de la campana es obligatorio.', 'red');
+                if(isFromPreview) hidePreview();
+                return;
+            }
+            if (!payload.Plantilla && !payload.Contenido) { // Verificamos Contenido
+                showMessage('form-message', 'Debes seleccionar una plantilla o escribir un mensaje.', 'red');
+                if(isFromPreview) hidePreview();
+                return;
+            }
+
+            setLoading(true);
+            hidePreview(); 
+            
+            // --- ¡LÓGICA DE GUARDADO ACTUALIZADA! ---
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler(onSaveSuccess) // Cambiado de onCreateSuccess
+                    .withFailureHandler(onSaveFailure) // Cambiado de onCreateFailure
+        _           .guardarCampana(payload, MODO_FORMULARIO); // ¡Llama a la nueva función .gs!
+            } else {
+                console.error("google.script.run no está definido.");
+                onSaveFailure({ message: "Entorno de script no válido." });
+            }
+        }
+        
+function onSaveSuccess(response) {
+            setLoading(false);
+            
+            if (response.success) {
+                showMessage('form-message', response.message, 'green');
+                resetForm(); // ¡Resetea el formulario al estado 'create'!
+                loadCampaigns(true); // Recarga la tabla
+                
+                // Ocultar UTM si estaba abierto
+                const utmContainer = document.getElementById('utm-container');
+                const utmChevron = document.getElementById('utm-chevron');
+                if (utmContainer && !utmContainer.classList.contains('hidden')) {
+                    utmContainer.classList.add('hidden');
+                    utmChevron.classList.remove('fa-chevron-up');
+                    utmChevron.classList.add('fa-chevron-down');
+                }
+                
+            } else {
+                showMessage('form-message', `Error: ${response.error || 'Error desconocido'}`, 'red');
+            }
+        }
+
+        function onSaveFailure(error) {
+            setLoading(false);
+            showMessage('form-message', `Error al guardar: ${error.message}`, 'red');
+            // Si falló la edición, no reseteamos el modo
+            if (MODO_FORMULARIO === 'edit') {
+                document.getElementById('submit-text').textContent = 'Actualizar Campaña';
+            }
+        }
+
+        function onCreateFailure(error) {
+            setLoading(false);
+            showMessage('form-message', `Error al crear: ${error.message}`, 'red');
+        }
+
+// --- LÓGICA DE PREVISUALIZACIÓN ---
+        function showPreview() {
+            const campaignForm = document.getElementById('campaign-form');
+            const formData = new FormData(campaignForm);
+            const segmentoSelect = document.getElementById('segmento');
+            
+            const nombre = formData.get('nombre_campana');
+            if (!nombre) {
+                showMessage('form-message', 'Escribe un nombre para previsualizar.', 'red');
+                return;
+            }
+            document.getElementById('preview-nombre').textContent = nombre;
+
+            const tipo = formData.get('tipo_campana');
+            document.getElementById('preview-tipo').textContent = tipo;
+
+            const segmentoKey = formData.get('segmento');
+            const segmentoLabel = segmentoSelect.querySelector(`option[value="${segmentoKey}"]`).textContent;
+            if (segmentoKey === 'Tags') {
+                document.getElementById('preview-segmento').textContent = `Tags: ${formData.get('segmento_tags') || 'N/A'}`;
+            } else {
+                document.getElementById('preview-segmento').textContent = segmentoLabel;
+            }
+
+            const plantilla = formData.get('plantilla');
+            const mensaje = formData.get('mensaje');
+            const previewContainer = document.getElementById('preview-container'); // Nuevo contenedor
+            const previewPlantillaAvisoEl = document.getElementById('preview-plantilla-aviso');
+            
+            previewContainer.innerHTML = ''; // Limpiar preview anterior
+            
+            if (plantilla) {
+                // Si se usa plantilla, mostramos aviso
+                previewContainer.innerHTML = `<p class="text-gray-500 text-center p-8">La previsualización de plantillas (${plantilla}) no está disponible. El servidor la cargará al enviar.</p>`;
+                previewPlantillaAvisoEl.classList.add('hidden');
+            
+            } else if (mensaje) {
+                // Si hay mensaje manual, elegimos el preview
+                previewPlantillaAvisoEl.classList.add('hidden');
+                const mensajePersonalizado = mensaje.replace(/{{NOMBRE}}/g, '[Nombre]');
+                
+                if (tipo.toLowerCase() === 'email') {
+                    // --- PREVIEW TIPO EMAIL (Usa la imagen que subiste) ---
+                    previewContainer.innerHTML = `
+                        <p class="text-xs text-gray-500 mb-2">Asunto: ${nombre}</p>
+                        <img src="https://i.imgur.com/8Qp2g2E.png" alt="Preview Email" class="preview-email-img">
+                        <div class="mt-4 p-4 bg-white border rounded-lg">
+                          <h5 class="font-semibold text-sm">Texto (si la imagen falla):</h5>
+                          <p class="text-sm text-gray-700 whitespace-pre-wrap mt-1">${mensajePersonalizado}</p>
+                        </div>
+                    `;
+                    // Nota: Reemplacé el link de postimg por uno de imgur (el tuyo era 'image_ce86c0.png' que se ve como 'https://i.imgur.com/8Qp2g2E.png')
+
+                } else {
+                    // --- PREVIEW TIPO CHAT (WhatsApp, etc.) ---
+                    previewContainer.innerHTML = `
+                        <div class="preview-chat-container">
+                            <div class="preview-chat-bubble">
+                                ${mensajePersonalizado}
+                            </div>
+                        </div>
+                    `;
+                }
+            
+            } else {
+                // No hay ni plantilla ni mensaje
+                 previewContainer.innerHTML = `<p class="text-red-500 text-center p-8">--- NINGÚN MENSAJE CONFIGURADO ---</p>`;
+                 previewPlantillaAvisoEl.classList.add('hidden');
+            }
+            
+            const fecha = formData.get('fecha_envio');
+            const hora = formData.get('hora_envio');
+            const previewProgramacionEl = document.getElementById('preview-programacion');
+            if (fecha && hora) {
+                previewProgramacionEl.textContent = `Programado para el ${fecha} a las ${hora}`;
+           } else if (fecha) {
+                previewProgramacionEl.textContent = `Programado para el ${fecha} (sin hora específicada)`;
+            } else {
+                previewProgramacionEl.textContent = "Se enviará inmediatamente.";
+            }
+
+            document.getElementById('preview-popup').classList.add('active');
+        }
+
+// =================================================================
+    //  HANDLERS DE BOTONES (¡AHORA FUNCIONALES!)
+    // =================================================================
+    
+    function handleEdit(campId) {
+        setLoadingState(true, true); // (isLoading, isTable)
+        
+        google.script.run
+            .withSuccessHandler(onCampañaLoadedForEdit)
+            .withFailureHandler(onFailure)
+            .getCampañaPorId(campId);
+    }
+    
+    function onCampañaLoadedForEdit(campana) {
+        setLoadingState(false, true);
+        
+        // Rellenar el formulario
+        document.getElementById('nombre').value = campana.Nombre || '';
+        document.getElementById('canal').value = campana.Canal || 'Email';
+        document.getElementById('fecha_envio').value = campana.Fecha_Envio || '';
+        document.getElementById('contenido').value = campana.Contenido || '';
+        document.getElementById('utm_source').value = campana.utm_source || '';
+        document.getElementById('utm_medium').value = campana.utm_medium || '';
+        document.getElementById('utm_campaign').value = campana.utm_campaign || '';
+        
+        // Lógica de Segmento
+        const segmentoTagsInput = document.getElementById('tags-input-container');
+        const segmentoSelect = document.getElementById('segmento');
+        const tagsInput = document.getElementById('tags');
+        
+        const segmento = campana.Segmento_Tags || 'todos';
+        if (segmento === 'todos' || segmento === 'suscritos' || segmento === 'clientes') {
+            segmentoSelect.value = segmento;
+            tagsInput.value = '';
+            segmentoTagsInput.classList.add('hidden');
+        } else {
+            // Es un tag
+            segmentoSelect.value = 'tags';
+            tagsInput.value = segmento;
+            segmentoTagsInput.classList.remove('hidden');
+        }
+        
+        // Configurar modo
+        MODO_FORMULARIO = 'edit';
+        ID_CAMPAÑA_EDICION = campana.CAMP_ID;
+        formSubmitButton.querySelector('#submit-text').textContent = 'Actualizar Campaña';
+        
+        // Mostrar previsualización y scrollear al formulario
+        actualizarPrevisualizacion();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+
+
+    function handleSendTest(campId) {
+        const testContacto = prompt("Ingresa tu email o teléfono de prueba (con cód. país, ej: 57300...):", "");
+        if (!testContacto || testContacto.trim() === "") {
+            return; // Cancelado
+        }
+        
+        setLoadingState(true, true);
+        
+        // Llamamos a la función principal de envío, pero en modo PRUEBA
+        google.script.run
+            .withSuccessHandler(response => {
+                setLoadingState(false, true);
+                alert(response.message);
+            })
+            .withFailureHandler(onFailure)
+            .ejecutarEnvioCampaña(campId, [testContacto.trim()], true); // (campId, listaPrueba, esPrueba = true)
+    }
+
+
+
+
+        // --- FUNCIONES UTILITARIAS ---
+        function setLoading(isLoadingState) {
+            isLoading = isLoadingState;
+            const formSubmitButton = document.getElementById('form-submit-button');
+            const submitText = document.getElementById('submit-text');
+            const submitSpinner = document.getElementById('submit-spinner');
+            
+            formSubmitButton.disabled = isLoading;
+            if (isLoading) {
+                submitText.classList.add('hidden');
+                submitSpinner.classList.remove('hidden');
+            } else {
+                submitText.classList.remove('hidden');
+                submitSpinner.classList.add('hidden');
+            }
+        }
+
+        function showMessage(elementId, message, color) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.className = `text-sm h-5 ${color === 'red' ? 'text-red-500' : 'text-green-600'}`;
+            
+            if (color === 'green') {
+                setTimeout(() => { el.textContent = ''; }, 4000);
+            }
+        }
+        
+        function handleNavigation(pageId) {
+            console.log('Navegar a:', pageId);
+            setLoading(true); 
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                window.top.location.href = SCRIPT_URL + "?page=" + pageId;
+            } else {
+                 console.error("No se puede navegar. Entorno de script no válido.");
+                 setLoading(false);
+            }
+        }
+
+        // --- INICIALIZACIÓN ---
+        window.onload = function() {
+            populateImages(); 
+            
+            // Cargar la lista inicial de campanas
+            loadCampaigns();
+            
+            // Listener del formulario (Crear Campaña)
+            const campaignForm = document.getElementById('campaign-form');
+            if (campaignForm) {
+                campaignForm.addEventListener('submit', handleFormSubmit);
+            }
+            
+            // Listener del botón de Previsualizar
+            const btnPreview = document.getElementById('btn-preview');
+            if (btnPreview) {
+                btnPreview.addEventListener('click', showPreview);
+            }
+
+            // Listener para el campo de Segmento (para mostrar/ocultar Tags)
+            const segmentoSelect = document.getElementById('segmento');
+            if (segmentoSelect) {
+                segmentoSelect.addEventListener('change', toggleTagsInput);
+                
+            }
+
+            // 🔥 ¡AÑADE ESTA LÍNEA! 🔥
+            setupEventListeners();
+            
+            // --- CORRECCIÓN: Listener para el botón colapsable UTM ---
+            const toggleUtmBtn = document.getElementById('toggle-utm-btn');
+            const utmContainer = document.getElementById('utm-container');
+            const utmChevron = document.getElementById('utm-chevron');
+            
+            if (toggleUtmBtn && utmContainer && utmChevron) { 
+                toggleUtmBtn.addEventListener('click', () => {
+                    const isHidden = utmContainer.classList.contains('hidden');
+                    if (isHidden) {
+                        // Mostrar
+                        utmContainer.classList.remove('hidden');
+                        utmChevron.classList.remove('fa-chevron-down');
+                        utmChevron.classList.add('fa-chevron-up');
+                    } else {
+                        // Ocultar
+                        utmContainer.classList.add('hidden');
+                        utmChevron.classList.remove('fa-chevron-up');
+                        utmChevron.classList.add('fa-chevron-down');
+                    }
+                });
+            } else {
+                console.error("Error: No se encontraron los elementos toggle-utm-btn, utm-container, o utm-chevron. Revisa los IDs del HTML.");
+            }
+            // --- Fin de la corrección ---
+
+        };
+
+        // =================================================================
+        //  BLOQUE L: LISTENER PARA BOTONES DE LA TABLA
+        // =================================================================
+
+        function setupEventListeners() {
+            // El 'oído' se pone en el 'tbody'
+            const container = document.getElementById('campaigns-table-body');
+            if (!container) {
+                console.error("Error: No se encontró 'campaigns-table-body'.");
+                return;
+            }
+            
+            container.addEventListener('click', function(event) {
+            // Encuentra el botón más cercano al que se hizo clic
+                const button = event.target.closest('button[data-action]');
+                
+                if (!button) return; // Se hizo clic en otra parte
+                
+                const action = button.dataset.action;
+                const campId = button.dataset.id;
+                const estado = button.dataset.estado;
+                
+                if (!campId) return;
+
+// Dirige a la función correcta
+                switch (action) {
+                    case 'edit': // ¡Nuevo!
+                        handleEdit(campId, estado);
+                        break;
+                    case 'duplicate': // ¡Nuevo!
+                        handleDuplicate(campId);
+                        break;
+                    case 'ver-metricas':
+                        handleViewMetrics(campId); 
+                        break;
+                    case 'pausar':
+                        handlePause(campId, estado);
+                        break;
+                    case 'eliminar':
+                        handleDelete(campId);
+                        break;
+                }
+            });
+        }
+        
+        function handleViewMetrics(campId) {
+        setLoading(true); 
+        
+        google.script.run
+            .withSuccessHandler(stats => {
+                setLoading(false);
+                // ¡Mejorado! Ya no es un simple alert.
+                const statsMsg = 
+                    `--- MÉTRICAS DE ${campId} ---\n` +
+                    `Total de Contactos: ${stats.total}\n` +
+                    `✔️ Enviados: ${stats.enviados}\n` +
+                    `❌ Fallidos: ${stats.fallidos}\n` +
+                    `Manual (WA): ${stats.pendientes}\n` +
+                    `Otros: ${stats.otros}`;
+                
+                // Mostramos un popup simple (puedes mejorarlo luego)
+                alert(statsMsg);
+                
+                // Aquí podrías llamar a un modal más elegante en el futuro
+                // ej: showMetricsModal(stats); 
+            })
+            .withFailureHandler(onSaveFailure) // Usa el handler correcto
+            .getMetricas(campId);
+    }
+
+
+function handleDelete(campId) {
+        if (!confirm(`¿Estás seguro de que deseas eliminar la campana ${campId}?\n¡Esta acción no se puede deshacer!`)) {
+            return;
+        }
+        
+        setLoading(true); 
+        
+        google.script.run
+            .withSuccessHandler(response => {
+                setLoading(false);
+                if (response.status === "ok") {
+                    alert(response.message);
+                    loadCampaigns(true); // ¡Recargar la lista!
+                } else {
+                    onSaveFailure({ message: response.message });
+                }
+            })
+            .withFailureHandler(onSaveFailure) // Usa el handler correcto
+            .eliminarCampaña(campId);
+    }
+        function handlePause(campId, estadoActual) {
+            const accion = (estadoActual || "Borrador").toLowerCase() === 'pausada' ? 'reanudar' : 'pausar';
+            
+            if (!confirm(`¿Estás seguro de que deseas ${accion} la campana ${campId}?`)) {
+                return;
+           }
+            
+            // Usamos tu función setLoading()
+            setLoading(true); 
+            
+            google.script.run
+                .withSuccessHandler(response => {
+                    setLoading(false);
+                    alert(response.message);
+                    loadCampaigns(true); // Recargar la tabla
+                })
+                .withFailureHandler(onCreateFailure) // Reusamos el handler de fallo
+                 .pausarCampaña(campId, estadoActual);
+        }
+// =================================================================
+        //  NUEVAS FUNCIONES (Editar, Duplicar, Resetear)
+        // =================================================================
+
+        /**
+         * Resetea el formulario al modo 'create'.
+         */
+        function resetForm() {
+            document.getElementById('campaign-form').reset();
+            
+            MODO_FORMULARIO = 'create';
+            ID_EDICION = null;
+            
+            document.getElementById('submit-text').textContent = 'Lanzar o Programar';
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+            showMessage('form-message', '', 'green'); // Limpiar mensajes
+            
+            // Resetea campos especiales
+            toggleTagsInput();
+            document.querySelector('input[name="tipo_campana"][value="WhatsApp"]').checked = true;
+        }
+
+        /**
+         * [NUEVO] Maneja el clic en el botón 'Editar'.
+         */
+        function handleEdit(campId, estado) {
+            if (estado.toLowerCase() !== 'borrador') {
+                alert('Solo se pueden editar campanas en estado "Borrador".');
+                return;
+            }
+            
+            setLoading(true);
+            showMessage('form-message', 'Cargando datos para editar...', 'blue');
+            
+            google.script.run
+                .withSuccessHandler(onEditLoadSuccess)
+                .withFailureHandler(onSaveFailure) // Reusamos el handler de fallo
+                .getCampañaPorId(campId);
+        }
+        
+        /**
+         * [NUEVO] Se ejecuta cuando los datos de la campana a editar se cargan.
+         */
+        function onEditLoadSuccess(campana) {
+            setLoading(false);
+            
+            // Rellenar el formulario
+            document.getElementById('nombre_campana').value = campana.Nombre || '';
+            document.getElementById('asociacion').value = campana.Asociacion || 'General';
+            
+            // Rellenar Radio Button
+            const tipo = campana.Tipo || 'WhatsApp';
+            document.querySelector(`input[name="tipo_campana"][value="${tipo}"]`).checked = true;
+            
+            document.getElementById('segmento').value = campana.Segmento_Cliente || 'Todos';
+            document.getElementById('segmento_tags').value = campana.Tags || '';
+            toggleTagsInput(); // Asegurarse de mostrar/ocultar el campo de tags
+            
+            document.getElementById('plantilla').value = campana.Plantilla || '';
+            document.getElementById('mensaje').value = campana.Contenido || ''; // (Contenido -> mensaje)
+            
+            // Rellenar UTMs
+            document.getElementById('utm_source').value = campana.utm_source || '';
+            document.getElementById('utm_medium').value = campana.utm_medium || '';
+            document.getElementById('utm_content').value = campana.utm_content || '';
+            document.getElementById('utm_term').value = campana.utm_term || '';
+            
+            // Rellenar Fecha y Hora
+            document.getElementById('fecha_envio').value = campana.Fecha_Envio ? campana.Fecha_Envio.split('T')[0] : '';
+            document.getElementById('hora_envio').value = campana.Hora_Prog || ''; // (Hora_Prog -> hora_envio)
+            
+            // Cambiar a modo edición
+            MODO_FORMULARIO = 'edit';
+            ID_EDICION = campana.CAMP_ID;
+            
+            document.getElementById('submit-text').textContent = 'Actualizar Campaña';
+            document.getElementById('btn-cancel-edit').classList.remove('hidden');
+            
+            showMessage('form-message', `Editando: ${campana.Nombre}`, 'blue');
+            
+            // Scroll al formulario
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        /**
+         * [NUEVO] Maneja el clic en el botón 'Duplicar'.
+         */
+        function handleDuplicate(campId) {
+            if (!confirm(`¿Estás seguro de que deseas duplicar la campana ${campId}?\nSe creará una copia nueva en estado "Borrador".`)) {
+                return;
+            }
+            
+            setLoading(true);
+         google.script.run
+                .withSuccessHandler(onDuplicateSuccess)
+                .withFailureHandler(onSaveFailure) // Reusamos el handler de fallo
+                .duplicarCampaña(campId);
+        }
+
+        /**
+         * [NUEVO] Se ejecuta cuando una campana se duplica con éxito.
+         */
+        function onDuplicateSuccess(response) {
+            setLoading(false);
+            if (response.status === "ok") {
+                alert(response.message);
+                loadCampaigns(true); // Recargar la tabla
+            } else {
+                onSaveFailure({ message: response.message });
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Productos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Estilos base del dashboard */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Fondo de toda la web (morado) */
+            background-color: #40185f; 
+        }
+        
+        /* Estilos para el spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #00008B; /* Color azul oscuro del tema */
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* --- INICIO: NUEVO SLIDER CSS (Integrado y adaptado) --- */
+        
+        :root {
+             --color-primary: #275efe;
+             --color-headline: #3f4656;
+             --color-text: #99a3ba;
+             --color-bg: #f4f7fc;
+        }
+
+        /* CORRECCIÓN: Se aplica el CSS del slider solo dentro del formulario de filtros */
+        #product-filter-form .card-conteiner {
+         cursor: default;
+        }
+        
+        #product-filter-form .card-content {
+         width: 100%;
+         padding: 0; 
+         background: transparent; 
+         border-radius: 10px;
+         box-shadow: none; 
+        }
+
+        #product-filter-form .card-content .card-title {
+         font-family: inherit;
+         font-size: 1rem; 
+         font-weight: 700;
+         margin: 0 0 10px 0;
+         color: var(--color-headline);
+        }
+
+        #product-filter-form .card-content .card-title span {
+         font-weight: 500;
+        }
+
+        #product-filter-form .card-content .values div, #product-filter-form .card-content .current-range div {
+         display: inline-block;
+         vertical-align: top;
+        }
+
+        #product-filter-form .card-content .values {
+         margin: 0;
+         font-weight: 500;
+         color: var(--color-primary);
+         font-size: 1rem; 
+        }
+
+        #product-filter-form .card-content .values > div:first-child {
+         margin-right: 2px;
+        }
+
+        #product-filter-form .card-content .values > div:last-child {
+         margin-left: 2px;
+        }
+
+        #product-filter-form .card-content .current-range {
+         display: block;
+         color: var(--color-text);
+         margin-top: 8px;
+         font-size: 14px;
+        }
+
+        #product-filter-form .card-content .slider {
+         display: flex;
+         justify-content: space-between;
+         margin-top: 10px; 
+         font-size: .6em;
+         color: var(--color-text);
+        }
+
+        /* Range Slider */
+        #product-filter-form .input-ranges[type='range'] {
+         width: 100%; 
+         height: 30px;
+         overflow: hidden;
+         outline: none;
+        }
+
+        #product-filter-form .input-ranges[type='range'],
+        #product-filter-form .input-ranges[type='range']::-webkit-slider-runnable-track,
+        #product-filter-form .input-ranges[type='range']::-webkit-slider-thumb {
+         -webkit-appearance: none;
+         background: none;
+        }
+
+        #product-filter-form .input-ranges[type='range']::-webkit-slider-runnable-track {
+         width: 100%; 
+         height: 1px;
+         background: var(--color-headline);
+        }
+
+        #product-filter-form .input-ranges[type='range']:nth-child(2)::-webkit-slider-runnable-track {
+         background: none;
+        }
+
+        #product-filter-form .input-ranges[type='range']::-webkit-slider-thumb {
+         position: relative;
+         height: 15px;
+         width: 15px;
+         margin-top: -7px;
+         background: #fff;
+         border: 1px solid var(--color-headline);
+         border-radius: 25px;
+         cursor: pointer;
+         z-index: 1;
+         transition: .5s;
+         -webkit-transition: .5s;
+         -moz-transition: .5s;
+         -ms-transition: .5s;
+         -o-transition: .5s;
+        }
+
+        #product-filter-form .input-ranges[type='range']::-webkit-slider-thumb:hover {
+         background: #eaefff;
+         border: 1px solid var(--color-primary);
+         outline: .5px solid var(--color-primary);
+        }
+
+        #product-filter-form .input-ranges[type='range']::-webkit-slider-thumb:active {
+         cursor: grabbing;
+        }
+
+        #product-filter-form .input-ranges[type='range']:nth-child(1)::-webkit-slider-thumb {
+         z-index: 2;
+        }
+
+        #product-filter-form .rangeslider {
+         font-family: sans-serif;
+         font-size: 14px;
+         position: relative;
+         height: 20px;
+         width: 100%; 
+         display: inline-block;
+         margin-top: -5px;
+        }
+
+        #product-filter-form .rangeslider input {
+         position: absolute;
+        }
+
+        #product-filter-form .rangeslider span {
+         position: absolute;
+         margin-top: 20px;
+         left: 0;
+        }
+
+        #product-filter-form .rangeslider .right {
+         position: relative;
+         float: right;
+         margin-right: -5px;
+        }
+        /* --- FIN: NUEVO SLIDER CSS --- */
+        
+        /* =============================================================== */
+        /* --- INICIO: CSS DE LA NUEVA TARJETA --- */
+        /* =============================================================== */
+        
+        /* Importación de fuentes */
+        @import url('https://fonts.googleapis.com/css2?family=Open+Sans+Condensed:wght@700&family=Raleway:wght@400;500;600;700;800&display=swap');
+
+        /* Reset básico y fuente principal (Aplicado solo al contenedor de tarjetas) */
+        #container, #container * {
+            box-sizing: border-box;
+            font-family: 'Raleway', serif;
+        }
+
+        #container h2 {
+            font-family: 'Open Sans Condensed', sans-serif;
+        }
+
+        /* Contenedor principal de la lista de productos */
+        #container {
+            min-height: 100vh;
+            width: 100%; 
+            background-color: transparent; 
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* Grid de 3 columnas */
+            align-items: start; /* Alinear tarjetas arriba */
+            justify-items: center; /* Centrar tarjetas horizontalmente en su celda */
+            padding: 20px;
+        }
+
+        /* Estilo base de las tarjetas */
+        .card {
+            margin: 30px;
+            height: 450px; 
+            width: 250px;
+            background-color: #fff;
+            border: 5px solid black;
+            box-shadow: 0 0 0 7px #fff, 0 0 8px 5px #000;
+            position: relative;
+            z-index: 10;
+            transition: transform 0.4s cubic-bezier(0.15, 0.83, 0.66, 1);
+            cursor: pointer;
+            /* overflow: hidden; */ 
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+            z-index: 11;
+        }
+
+        .card-image {
+            position: relative;
+            width: 100%;
+            border-bottom: 5px solid #000;
+            z-index: 1; 
+        }
+
+        .card-image>img {
+            position: absolute;
+            z-index: 2;
+            height: 100%;
+            object-fit: contain; 
+            object-position: center;
+        }
+
+        /* --- Estilos de SPIDERMAN --- */
+        #foto_product > .card-image { 
+            background-color: #5CAAB4;
+            height: 60%; 
+        }
+        
+        #foto_product h2 { 
+            color: #2E5579;
+            font-size: 2.5rem; 
+            letter-spacing: 5px; 
+            text-align: center;
+            margin-left: 0; 
+            padding-top: 5px; 
+        }
+
+        #foto_product > .card-image > img {
+            width: 170%;
+            height: 110%;
+            object-fit: contain; 
+            position: absolute;
+            z-index: 2;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin-top: 0; 
+            margin-left: 0; 
+        }
+
+        #foto_product > .card-text > div {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            /* =============================================================== */
+            /* CAMBIO: Añadido padding superior para bajar los textos */
+            /* =============================================================== */
+            padding-top: 10px; 
+        }
+
+        #foto_product > .card-text > div > div:first-child {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #foto_product > .card-text > div > div:first-child > span {
+            font-size: 1.5rem;
+            line-height: 30px;
+            font-weight: 500;
+        }
+
+        #foto_product > .card-text > div > div:last-child {
+            display: flex;
+        }
+
+        #foto_product > .card-text > div > div:last-child > span:first-child {
+            font-size: 5rem;
+            font-weight: 800;
+            line-height: 60px;
+        }
+
+        #foto_product > .card-text > div > div:last-child > span:last-child {
+            font-weight: 600;
+            font-size: 1.3rem;
+        }
+
+        /* --- NUEVO CSS para la etiqueta de cantidad (Q: XXX) --- */
+        .quantity-label {
+            position: absolute;
+            top: 20px; 
+            left: 20px; 
+            color: white; 
+            padding: 2px 5px; 
+            font-size: 0.8rem; 
+            font-weight: bold;
+            z-index: 25; 
+            background-color: rgba(0,0,0,0.3); 
+            border-radius: 3px;
+        }
+        /* --- FIN CSS NUEVA TARJETA --- */
+    </style>
+</head>
+<body class="">
+    <div class="w-full max-w-7xl mx-auto p-6">
+        
+        <div class="w-full flex justify-between items-center pt-8 pb-10">
+            <img data-src-key="logo" alt="Logo" 
+                 class="h-10 w-auto cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-95 hover:drop-shadow-lg" 
+                 onclick="handleNavigation('INDEX')">
+            
+            <h1 id="header-title" style="font-family: 'Inter', sans-serif;" class="text-3xl font-bold text-gray-100 hidden md:block">Gestión de Productos</h1>
+            
+            <button
+              id="btn-back-to-search" 
+              onclick="handleNavigation('PRODUCTOS')"
+              type="button"
+              style="font-family: 'Inter', sans-serif;"
+              class="bg-white text-center w-48 rounded-2xl h-14 relative text-blue-700 text-xl font-semibold border-4 border-white group shadow-md"
+            >
+              <div
+                class="bg-blue-600 rounded-xl h-12 w-1/4 grid place-items-center absolute left-0 top-0 group-hover:w-full z-10 duration-500"
+              >
+                <svg
+                  class="w-6 h-6"
+                  viewBox="0 0 1024 1024"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fill="#FFFFFF" 
+                    d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z"
+                  ></path>
+                  <path
+                    fill="#FFFFFF"
+                    d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z"
+                  ></path>
+                </svg>
+              </div>
+              <p class="translate-x-4 transition-transform duration-500 group-hover:translate-x-0">Volver</p> 
+            </button>
+        </div>
+        
+        <div id="view-products">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-lg shadow-md p-6 sticky top-6" style="font-family: 'Inter', sans-serif;">
+                        <h2 class="text-xl font-bold text-gray-800 mb-6">Filtrar Productos</h2>
+                        
+                        <form id="product-filter-form" class="space-y-6">
+                            
+                            <div>
+                                <label for="search-term" class="block text-sm font-medium text-gray-700">Buscar Producto</label>
+                                <input type="text" id="search-term" name="search-term"
+                                       placeholder="Nombre, SKU..."
+                                       class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                            </div>
+
+                            <div>
+                                <label for="filter-category" class="block text-sm font-medium text-gray-700">Categoría</label>
+                                <select id="filter-category" name="filter-category"
+                                        class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                    <option value="">Todas</option>
+                                    <option value="Producto Terminado">Producto Terminado</option>
+                                    <option value="Materia Prima">Materia Prima</option>
+                                    <option value="Insumos">Insumos</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <div class="card-content">
+                                    <div class="card-title" style="font-size: 1rem; font-weight: 700;">Rango de <span>Precios</span></div>
+                                    <div class="values">
+                                        <div>$<span id="first">735</span></div> -
+                                        <div>$<span id="second">6465</span></div>
+                                    </div>
+                                    <small class="current-range" style="display: none;"> 
+                                        Current Range:
+                                        <div>$<span id="third">5730</span></div>
+                                    </small>
+                                    <div data-range="#third" data-value-1="#second" data-value-0="#first" class="slider">
+                                        <label class="label-min-value">1</label>
+                                        <label class="label-max-value">10000</label>
+                                    </div>
+                                    <div class="rangeslider">
+                                        <input id="slider-min" class="min input-ranges" name="range_1" type="range" min="1" max="10000" value="735">
+                                        <input id="slider-max" class="max input-ranges" name="range_1" type="range" min="1" max="10000" value="6465">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Existencia</label>
+                                <div class="mt-2 space-y-2">
+                                    <div class="flex items-center">
+                                        <input id="stock-in" name="stock-filter" type="checkbox" value="in_stock"
+                                               class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                        <label for="stock-in" class="ml-2 block text-sm text-gray-900">En Stock</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input id="stock-low" name="stock-filter" type="checkbox" value="low_stock"
+                                               class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500">
+                                        <label for="stock-low" class="ml-2 block text-sm text-gray-900">Stock Bajo</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input id="stock-out" name="stock-filter" type="checkbox" value="out_of_stock"
+                                               class="h-4 w-4 text-red-600 border-gray-300 rounded focus:ring-red-500">
+                                        <label for="stock-out" class="ml-2 block text-sm text-gray-900">Sin Stock</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-4">
+                                <button type="reset" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-4 rounded-lg transition-colors duration-300">
+                                    Reset
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-3 space-y-6">
+                    
+                    <div class="flex justify-between items-center" style="font-family: 'Inter', sans-serif;">
+                        <h2 class="text-2xl font-bold text-gray-100">Lista de Productos</h2>
+                        
+                        <div class="flex gap-4">
+
+                            
+                            <button onclick="console.log('Abrir modal Crear Insumo')"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-5 rounded-lg transition-colors duration-300 shadow-md flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                                Crear Insumo
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="container">
+                        <div class="card" id="foto_product"
+                             data-name="Producto Spiderman" 
+                             data-category="Materia Prima" 
+                             data-price="1200" 
+                             data-stock="120"
+                             data-stock-status="in_stock">
+                            
+                            <div class="quantity-label">Q: ###</div> 
+
+                            <div class="card-image">
+                                <img src="https://i.postimg.cc/fbJ5rdqP/12s-KSS-con-filtro-AG.png"
+                                     onerror="this.onerror=null; this.src='https://placehold.co/250x360/5CAAB4/000000?text=Spiderman';" />
+                            </div>
+                            <div class="card-text">
+                                <h2>MARVEL</h2>
+                                <div>
+                                    <div>
+                                        <span>COMICS</span>
+                                        <span>GROUP</span>
+                                    </div>
+                                    <div>
+                                        <span>12</span>
+                                        <span>&cent;</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                
+            </div>
+        </div> 
+    </div> 
+
+    <script>
+                  const SCRIPT_URL = '<?= url ?>';
+
+        // ==================================================================
+        // LISTADO CENTRAL DE IMÁGENES
+        // ==================================================================
+        const imageConfig = {
+            logo: "https://i.postimg.cc/BQ2Sp0T4/Logotransparente.png"
+        };
+
+        function populateImages() {
+            const images = document.querySelectorAll('[data-src-key]');
+            images.forEach(img => {
+                const key = img.getAttribute('data-src-key');
+                if (imageConfig[key]) {
+                    img.src = imageConfig[key];
+                }
+            });
+        }
+        // ==================================================================
+
+        
+                        // --- NAVEGACIÓN DEL DASHBOARD ---
+        function handleNavigation(pageId) {
+            console.log('Navegar a:', pageId);
+            
+            // ¡AQUÍ ESTÁ LA MAGIA!
+            // Esto cambia la URL del navegador, añadiendo el parámetro "?page="
+            window.top.location.href = SCRIPT_URL + "?page=" + pageId;
+        }
+
+        // --- INICIALIZACIÓN ---
+        window.onload = function() {
+            populateImages(); 
+            
+            console.log("Página de Gestión de Productos cargada.");
+
+            // --- REFERENCIAS A FILTROS ---
+            const filterForm = document.getElementById('product-filter-form');
+            const categorySelect = document.getElementById('filter-category');
+            const productList = document.getElementById('container'); 
+            
+            // --- DATOS INICIALES (para el slider) ---
+            const allCards = productList.querySelectorAll('.card');
+            const allPrices = Array.from(allCards)
+                                     .map(card => card.dataset ? parseFloat(card.dataset.price) : NaN)
+                                     .filter(price => !isNaN(price));
+            
+            const minPrice = allPrices.length > 0 ? Math.min(...allPrices) : 0;
+            const maxPrice = allPrices.length > 0 ? Math.max(10000, ...allPrices) : 10000;
+
+            // --- INICIO: LÓGICA DEL NUEVO SLIDER ---
+            const sliderMin = document.getElementById('slider-min');
+            const sliderMax = document.getElementById('slider-max');
+            
+            const displayMin = document.getElementById('first');
+            const displayMax = document.getElementById('second');
+            const displayRange = document.getElementById('third');
+            
+            const labelMin = document.querySelector('.slider .label-min-value');
+            const labelMax = document.querySelector('.slider .label-max-value');
+            
+            const minGap = (maxPrice - minPrice) * 0.01; 
+
+            function formatNumber(num) {
+                 return new Intl.NumberFormat('es-CO', { 
+                   style: 'decimal', 
+                   maximumFractionDigits: 0 
+                }).format(num);
+            }
+
+            if (sliderMin && sliderMax) {
+                sliderMin.min = minPrice;
+                sliderMin.max = maxPrice;
+                sliderMin.value = minPrice;
+                
+                sliderMax.min = minPrice;
+                sliderMax.max = maxPrice;
+                sliderMax.value = maxPrice;
+                
+                if(labelMin) labelMin.textContent = formatNumber(minPrice);
+                if(labelMax) labelMax.textContent = formatNumber(maxPrice);
+            }
+
+            function updateDisplayValues() {
+                if (!sliderMin || !sliderMax) return;
+
+                let minVal = parseInt(sliderMin.value);
+                let maxVal = parseInt(sliderMax.value);
+
+                displayMin.textContent = formatNumber(minVal);
+                displayMax.textContent = formatNumber(maxVal);
+                if(displayRange) displayRange.textContent = formatNumber(maxVal - minVal);
+            }
+
+            sliderMin.addEventListener('input', function() {
+                let minVal = parseInt(this.value);
+                let maxVal = parseInt(sliderMax.value);
+
+                if (maxVal - minVal < minGap) {
+                    this.value = maxVal - minGap;
+                }
+                updateDisplayValues();
+                filterProducts(); 
+            });
+
+            sliderMax.addEventListener('input', function() {
+                let minVal = parseInt(sliderMin.value);
+                let maxVal = parseInt(this.value);
+
+                if (maxVal - minVal < minGap) {
+                    this.value = minVal + minGap;
+                }
+                updateDisplayValues();
+                filterProducts(); 
+            });
+
+            updateDisplayValues();
+            // --- FIN: LÓGICA DEL NUEVO SLIDER ---
+
+
+            // --- LÓGICA DE FILTRADO ---
+            const filterProducts = () => {
+                const searchTerm = document.getElementById('search-term').value.toLowerCase();
+                const category = categorySelect.value;
+                
+                const priceMin = parseFloat(sliderMin.value);
+                const priceMax = parseFloat(sliderMax.value);
+                
+                const stockCheckboxes = document.querySelectorAll('input[name="stock-filter"]:checked');
+                const stockFilters = Array.from(stockCheckboxes).map(cb => cb.value);
+
+                // AHORA BUSCAMOS DIRECTAMENTE LAS TARJETAS DENTRO DEL CONTENEDOR
+                const cards = productList.querySelectorAll('.card');
+
+                cards.forEach(card => {
+                    const cardData = card.dataset;
+                    
+                    if (!cardData || !cardData.name) {
+                        card.style.display = 'none'; 
+                        return; 
+                    }
+
+                    const cardPrice = parseFloat(cardData.price);
+                    
+                    const nameMatch = cardData.name.toLowerCase().includes(searchTerm);
+                    const categoryMatch = (category === "") || (cardData.category === category);
+                    const priceMatch = cardPrice >= priceMin && cardPrice <= priceMax;
+                    const stockStatus = cardData.stockStatus;
+                    const stockMatch = (stockFilters.length === 0) || stockFilters.includes(stockStatus);
+
+                    if (nameMatch && categoryMatch && priceMatch && stockMatch) {
+                        card.style.display = 'block'; 
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            };
+
+            // --- ASIGNAR EVENT LISTENERS ---
+            if (filterForm) {
+                
+                document.getElementById('search-term').addEventListener('input', filterProducts);
+                document.getElementById('filter-category').addEventListener('change', filterProducts);
+                document.querySelectorAll('input[name="stock-filter"]').forEach(checkbox => {
+                    checkbox.addEventListener('change', filterProducts);
+                });
+                
+                filterForm.addEventListener('reset', () => {
+                    setTimeout(() => {
+                        if (sliderMin && sliderMax) {
+                            sliderMin.value = minPrice;
+                            sliderMax.value = maxPrice;
+                            updateDisplayValues(); 
+                        }
+                        filterProducts(); 
+                    }, 0);
+                });
+            }
+
+            // Filtrar al cargar la página por primera vez
+            filterProducts();
+        };
+    </script>
+
+</body>
+</html>

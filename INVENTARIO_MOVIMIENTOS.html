@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Título cambiado para el Kardex -->
+    <title>Kardex - Movimientos de Inventario</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Estilos base del dashboard (heredados) */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* bg-gray-100 */
+        }
+        
+        /* Estilo para los inputs deshabilitados */
+        input:disabled, textarea:disabled, select:disabled {
+            background-color: #e5e7eb; /* bg-gray-200 */
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Estilos para el spinner (heredado) */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #00008B; /* Color azul oscuro del tema */
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Estilos de Pestañas y Checkbox (heredados del template)
+           No se usan activamente en esta vista, pero se mantienen 
+           por si se añaden funcionalidades futuras y para el spinner.
+        */
+        
+        /* --- ESTILO DE PESTAÑAS (Tabs) --- */
+        .tab-button {
+            transition: all 0.2s ease;
+            border-bottom: 2px solid transparent;
+            padding: 1rem 0.5rem;
+            font-weight: 500;
+            color: #6b7280; /* text-gray-500 */
+        }
+        .tab-button:hover {
+            color: #374151; /* text-gray-700 */
+        }
+        .tab-button.active {
+            border-color: #00008B;
+            color: #00008B;
+        }
+        .tab-panel {
+            display: none;
+        }
+        .tab-panel.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-blue-600">
+
+    <div class="w-full max-w-7xl mx-auto p-6">
+        
+        <!-- ===== HEADER ===== -->
+        <div class="w-full flex justify-between items-center pt-8 pb-10">
+            <!-- Logo Interactivo -->
+            <img data-src-key="logo" alt="Logo" 
+                 class="h-10 w-auto cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-95 hover:drop-shadow-lg" 
+                 onclick="handleNavigation('INDEX')">
+            
+            <!-- Título de la página actualizado -->
+            <h1 id="header-title" class="text-3xl font-bold text-white hidden md:block">Kardex / Movimientos de Inventario</h1>
+            
+            <!-- Botón de Volver/Búsqueda -->
+            <button
+              id="btn-back-to-search" 
+              onclick="handleNavigation('INDEX')"
+              type="button"
+              class="bg-white text-center w-48 rounded-2xl h-14 relative text-blue-700 text-xl font-semibold border-4 border-white group"
+            >
+              <div
+                class="bg-blue-600 rounded-xl h-12 w-1/4 grid place-items-center absolute left-0 top-0 group-hover:w-full z-10 duration-500"
+              >
+                <svg
+                  class="w-6 h-6"
+                  viewBox="0 0 1024 1024"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fill="#FFFFFF" 
+                    d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z"
+                  ></path>
+                  <path
+                    fill="#FFFFFF"
+                    d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z"
+                  ></path>
+                </svg>
+              </div>
+              <p class="translate-x-4 transition-transform duration-500 group-hover:translate-x-0">Volver</p> 
+            </button>
+        </div>
+        
+        <!-- ===== VISTA PRINCIPAL DEL KARDEX ===== -->
+        <!-- La vista de "search" se reutiliza como la vista principal -->
+        <div id="view-search">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Columna Izquierda: Formulario de "Ajuste Manual" -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-lg shadow-md p-6 sticky top-6">
+                        
+                        <h2 class="text-xl font-bold text-gray-800 mb-6">Ajuste Manual de Inventario</h2>
+
+                        <!-- Formulario de Ajuste Manual -->
+                        <form id="adjustment-form">
+                            <div class="space-y-4">
+                                <!-- Campos del formulario de ajuste -->
+                                <div id="adjustment-fields" class="space-y-4">
+                                    <div>
+                                        <label for="adj-sku" class="block text-sm font-medium text-gray-700">Item (SKU)</label>
+                                        <input type="text" id="adj-sku" name="adj-sku" placeholder="SKU del ítem a ajustar"
+                                               class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="adj-tipo" class="block text-sm font-medium text-gray-700">Tipo de Ajuste</label>
+                                        <select id="adj-tipo" name="adj-tipo"
+                                                class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                            <option value="Entrada">Ajuste de Entrada (Sobrante)</option>
+                                            <option value="Salida">Ajuste de Salida (Pérdida/Ruptura)</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label for="adj-cantidad" class="block text-sm font-medium text-gray-700">Cantidad (Positivo)</label>
+                                        <input type="number" id="adj-cantidad" name="adj-cantidad" min="0" step="any" placeholder="0"
+                                               class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                    </div>
+
+                                    <div>
+                                        <label for="adj-almacen" class="block text-sm font-medium text-gray-700">Almacén</label>
+                                        <select id="adj-almacen" name="adj-almacen"
+                                                class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                            <option value="">Cargando almacenes...</option>
+                                            <!-- Opciones de almacén se cargarán dinámicamente -->
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label for="adj-justificacion" class="block text-sm font-medium text-gray-700">Justificación (ObligatorIA)</label>
+                                        <textarea id="adj-justificacion" name="adj-justificacion" rows="3" placeholder="Ej: Ruptura por mal manejo, Sobrante en conteo físico..."
+                                                  class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0"></textarea>
+                                    </div>
+                                </div>
+                                
+                                <p id="adj-form-message" class="text-sm h-5"></p>
+
+                                <!-- GRUPO DE BOTONES DE ACCIÓN -->
+                                <div class="flex gap-4">
+                                    <button type="button" id="adj-cancel-button"
+                                            class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-4 rounded-lg transition-colors duration-300">
+                                        Limpiar
+                                    </button>
+                                    <button type="submit" id="adj-submit-button"
+                                            class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center">
+                                        <span id="adj-submit-text">Registrar Ajuste</span>
+                                        <div id="adj-submit-spinner" class="spinner hidden" style="width: 20px; height: 20px; border-width: 2px;"></div>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Filtros de Búsqueda y Resultados -->
+                <div class="lg:col-span-2 space-y-6">
+                    
+                    <!-- Card de Filtros de Búsqueda -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Auditoría de Ítem (Kardex)</h2>
+                        <form id="kardex-search-form">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <!-- Búsqueda principal de SKU -->
+                                <div class="md:col-span-3">
+                                    <label for="sku-search-input" class="block text-sm font-medium text-gray-700">Buscar por SKU o Nombre</label>
+                                    <input type="text" id="sku-search-input" placeholder="Buscar por SKU o Nombre..."
+                                           class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                </div>
+                                <!-- Botón de Búsqueda -->
+                                <div class="md:col-span-1 self-end">
+                                    <button type="submit" id="search-kardex-btn"
+                                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center">
+                                        <span id="search-kardex-text">Buscar</span>
+                                        <div id="search-kardex-spinner" class="spinner hidden" style="width: 20px; height: 20px; border-width: 2px;"></div>
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Filtros Secundarios -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t">
+                                <div>
+                                    <label for="filter-date-from" class="block text-sm font-medium text-gray-700">Desde</label>
+                                    <input type="date" id="filter-date-from" name="filter-date-from"
+                                           class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                </div>
+                                <div>
+                                    <label for="filter-date-to" class="block text-sm font-medium text-gray-700">Hasta</label>
+                                    <input type="date" id="filter-date-to" name="filter-date-to"
+                                           class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                </div>
+                                <div>
+                                    <label for="filter-tipo" class="block text-sm font-medium text-gray-700">Tipo Movimiento</label>
+                                    <select id="filter-tipo" name="filter-tipo"
+                                            class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                        <option value="Todos">Todos</option>
+                                        <option value="Entrada">Entradas</option>
+                                        <option value="Salida">Salidas</option>
+                                    </select>
+                                </div>
+                                <div class="md:col-span-3">
+                                    <label for="filter-almacen" class="block text-sm font-medium text-gray-700">Almacén</label>
+                                    <select id="filter-almacen" name="filter-almacen"
+                                            class="w-full mt-1 px-4 py-3 rounded-lg bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0">
+                                        <option value="Todos">Todos los Almacenes</option>
+                                        <option value="">Cargando almacenes...</option>
+                                        <!-- Opciones de almacén se cargarán dinámicamente -->
+                                    </select>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Card de Resultados (Tabla) -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Historial de Movimientos</h2>
+                        
+                        <!-- Mensaje de estado (inicial, cargando, sin resultados) -->
+                        <div id="kardex-results-message" class="text-center text-gray-500 py-8">
+                            <p id="kardex-results-message-text">Busque un SKU para ver su historial.</p>
+                        </div>
+                        
+                        <!-- Contenedor de la Tabla (inicialmente oculto) -->
+                        <div class="overflow-x-auto hidden" id="kardex-table-container">
+                            <table class="w-full text-sm text-left text-gray-600">
+                                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">Fecha</th>
+                                        <th scope="col" class="px-6 py-3">Tipo</th>
+                                        <th scope="col" class="px-6 py-3">Referencia</th>
+                                        <th scope="col" class="px-6 py-3">Cantidad</th>
+                                        <th scope="col" class="px-6 py-3">Saldo</th>
+                                        <th scope="col" class="px-6 py-3">Costo Unit.</th>
+                                        <th scope="col" class="px-6 py-3">Valor Total</th>
+                                        <th scope="col" class="px-6 py-3">Usuario</th>
+                                        <th scope="col" class="px-6 py-3">Almacén</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="kardex-table-body">
+                                    <!-- Fila de ejemplo de cómo se vería (se borra al cargar) -->
+                                    <tr class="bg-white border-b">
+                                        <td colspan="9" class="px-6 py-4 text-center text-gray-400">
+                                            ...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+
+        <!-- VISTA DE DETALLE (ELIMINADA) -->
+        <!-- El div#view-detail completo ha sido removido de esta página -->
+
+    </div>
+    
+<script>
+        // URL de la App (se reemplaza en el servidor)
+        const SCRIPT_URL = '<?= url ?>';
+
+        // ==================================================================
+        // LISTADO CENTRAL DE IMÁGENES
+        // ==================================================================
+        const imageConfig = {
+            logo: "https://i.postimg.cc/BQ2Sp0T4/Logotransparente.png"
+        };
+
+        function populateImages() {
+            const images = document.querySelectorAll('[data-src-key]');
+            images.forEach(img => {
+                const key = img.getAttribute('data-src-key');
+                if (imageConfig[key]) {
+                    img.src = imageConfig[key];
+                }
+            });
+        }
+        // ==================================================================
+
+        // --- REFERENCIAS AL DOM (Kardex) ---
+        const headerTitle = document.getElementById('header-title');
+        
+        // Formulario de Búsqueda
+        const kardexSearchForm = document.getElementById('kardex-search-form');
+        const skuSearchInput = document.getElementById('sku-search-input');
+        const searchKardexBtn = document.getElementById('search-kardex-btn');
+        const searchKardexText = document.getElementById('search-kardex-text');
+        const searchKardexSpinner = document.getElementById('search-kardex-spinner');
+        const filterDateFrom = document.getElementById('filter-date-from');
+        const filterDateTo = document.getElementById('filter-date-to');
+        const filterTipo = document.getElementById('filter-tipo');
+        const filterAlmacen = document.getElementById('filter-almacen');
+
+        // Tabla de Resultados
+        const kardexResultsMessage = document.getElementById('kardex-results-message');
+        const kardexResultsMessageText = document.getElementById('kardex-results-message-text');
+        const kardexTableContainer = document.getElementById('kardex-table-container');
+        const kardexTableBody = document.getElementById('kardex-table-body');
+
+        // Formulario de Ajuste Manual
+        const adjustmentForm = document.getElementById('adjustment-form');
+        const adjSku = document.getElementById('adj-sku');
+        const adjTipo = document.getElementById('adj-tipo');
+        const adjCantidad = document.getElementById('adj-cantidad');
+        const adjAlmacen = document.getElementById('adj-almacen');
+        const adjJustificacion = document.getElementById('adj-justificacion');
+        const adjFormMessage = document.getElementById('adj-form-message');
+        const adjCancelButton = document.getElementById('adj-cancel-button');
+        const adjSubmitButton = document.getElementById('adj-submit-button');
+        const adjSubmitText = document.getElementById('adj-submit-text');
+        const adjSubmitSpinner = document.getElementById('adj-submit-spinner');
+
+
+        // --- INICIALIZACIÓN ---
+        window.onload = function() {
+            populateImages(); 
+            headerTitle.textContent = 'Kardex / Movimientos de Inventario';
+            
+            // Listeners de formularios
+            kardexSearchForm.addEventListener('submit', handleKardexSearch);
+            adjustmentForm.addEventListener('submit', handleAdjustmentSubmit);
+            adjCancelButton.addEventListener('click', resetAdjustmentForm);
+            
+            // Cargar datos iniciales (almacenes)
+            // FIX: Llamar al nuevo 'waitForGoogleScript'
+            waitForGoogleScript(loadInitialData);
+        };
+        
+        /**
+         * Espera a que la API 'google.script.run' esté disponible.
+         */
+        function waitForGoogleScript(callback) {
+            let retries = 0;
+            const maxRetries = 20; // Intentar por 2 segundos (20 * 100ms)
+            const interval = 100;
+
+            function check() {
+                if (typeof google !== 'undefined' && typeof google.script !== 'undefined' && typeof google.script.run !== 'undefined') {
+                    // ¡Éxito! La API está cargada.
+                    callback();
+                } else if (retries < maxRetries) {
+                    // Aún no está lista, volver a intentar.
+                    retries++;
+                    setTimeout(check, interval);
+                } else {
+                    // Se superó el tiempo límite. Mostrar error y activar modo demo.
+                    console.error("Error: google.script.run API no se pudo cargar. Activando MODO DEMO.");
+                    showMessage('adj-form-message', 'Error: No se pudo conectar al servidor. Activando MODO DEMO.', 'red');
+                    kardexResultsMessageText.textContent = 'Error: No se pudo conectar al servidor. Activando MODO DEMO.';
+                    kardexResultsMessageText.className = 'text-red-500';
+                    kardexResultsMessage.classList.remove('hidden');
+                    
+                    activateDemoMode(callback); // Llamar al activador del modo demo y pasar el callback original
+                }
+            }
+            check();
+        }
+
+        /**
+         * Activa un 'modo demo' si google.script.run no se encuentra.
+         * Esto crea un objeto 'google.script.run' falso con datos de simulación.
+         */
+        function activateDemoMode(callback) {
+            console.warn("MODO DEMO ACTIVADO. No se pudo conectar a google.script.run. Usando datos de simulación.");
+            
+            // Mostrar mensajes en la UI
+            showMessage('adj-form-message', 'MODO DEMO ACTIVADO.', 'red');
+            kardexResultsMessageText.textContent = 'MODO DEMO. Busque un SKU (ej. "VE-KS-001") para ver datos de simulación.';
+            kardexResultsMessageText.className = 'text-gray-500';
+            kardexResultsMessage.classList.remove('hidden');
+
+            // Crear el mock del objeto 'google'
+            if (typeof window.google === 'undefined') {
+                window.google = {};
+            }
+            if (typeof google.script === 'undefined') {
+                google.script = {};
+            }
+
+            // Mock del servidor
+            const mockServer = {
+                successHandler: null,
+                failureHandler: null,
+
+                withSuccessHandler(handler) {
+                    this.successHandler = handler;
+                    return this;
+                },
+                withFailureHandler(handler) {
+                    this.failureHandler = handler;
+                    return this;
+                },
+                
+                // Mock para getAlmacenes
+                getAlmacenes() {
+                    console.log("DEMO: getAlmacenes()");
+                    const data = [
+                        { Nombre: "Bodega Principal" },
+                        { Nombre: "Producto Terminado" },
+                        { Nombre: "Insumos" }
+                    ];
+                    setTimeout(() => {
+                        if (this.successHandler) {
+                            this.successHandler(data);
+                        }
+                        this.resetHandlers();
+                    }, 500);
+                },
+
+                // Mock para getKardexBySku
+                getKardexBySku(searchParams) {
+                    console.log("DEMO: getKardexBySku() con", searchParams);
+                    const data = [
+                        { Fecha: "2023-10-01", Tipo: "Entrada", Referencia: "OC-001", Cantidad: 100, Saldo_Acumulado: 100, Costo_unitario: 10000, Valor_Total: 1000000, Usuario: "admin", Almacen: "Bodega Principal" },
+                        { Fecha: "2023-10-05", Tipo: "Salida", Referencia: "FAC-001", Cantidad: -20, Saldo_Acumulado: 80, Costo_unitario: 10000, Valor_Total: -200000, Usuario: "vendedor", Almacen: "Bodega Principal" },
+                        { Fecha: "2023-10-10", Tipo: "Entrada", Referencia: "PROD-001", Cantidad: 50, Saldo_Acumulado: 130, Costo_unitario: 10000, Valor_Total: 500000, Usuario: "prod", Almacen: "Producto Terminado" },
+                        { Fecha: "2023-10-11", Tipo: "Salida", Referencia: "AJUSTE-001", Cantidad: -1, Saldo_Acumulado: 129, Costo_unitario: 10000, Valor_Total: -10000, Usuario: "bodega", Almacen: "Producto Terminado" },
+                    ];
+                    setTimeout(() => {
+                        if (this.successHandler) {
+                            this.successHandler(data);
+                        }
+                        this.resetHandlers();
+                    }, 800);
+                },
+
+                // Mock para crearAjusteInventario
+                crearAjusteInventario(ajusteObject) {
+                    console.log("DEMO: crearAjusteInventario() con", ajusteObject);
+                    const response = {
+                        success: true,
+                        skuAjustado: ajusteObject.sku
+                    };
+                    setTimeout(() => {
+                        if (this.successHandler) {
+                            this.successHandler(response);
+                        }
+                        this.resetHandlers();
+                    }, 600);
+                },
+
+                resetHandlers() {
+                    this.successHandler = null;
+                    this.failureHandler = null;
+                }
+            };
+
+            // Sobrescribir google.script.run
+            Object.defineProperty(google.script, 'run', {
+                get: function() {
+                    // Devolver un objeto que simula la cadena de llamadas
+                    return {
+                        withSuccessHandler: mockServer.withSuccessHandler.bind(mockServer),
+                        withFailureHandler: mockServer.withFailureHandler.bind(mockServer),
+                        getAlmacenes: mockServer.getAlmacenes.bind(mockServer),
+                        getKardexBySku: mockServer.getKardexBySku.bind(mockServer),
+                        crearAjusteInventario: mockServer.crearAjusteInventario.bind(mockServer)
+                    };
+                }
+            });
+            
+            // Ahora que el mock está listo, llamar al callback original (loadInitialData)
+            callback();
+        }
+
+
+        /**
+         * Carga datos necesarios para los filtros, como los almacenes.
+         */
+        function loadInitialData() {
+            google.script.run
+                .withSuccessHandler(populateAlmacenes)
+                .withFailureHandler(onInitialDataFailure)
+                .getAlmacenes(); // Asumimos que esta función existe en CODE.gs
+        }
+
+        function populateAlmacenes(almacenes) {
+            if (!almacenes || almacenes.length === 0) {
+                onInitialDataFailure(new Error("No se recibieron almacenes."));
+                return;
+            }
+
+            // Limpiar selects
+            filterAlmacen.innerHTML = '<option value="Todos">Todos los Almacenes</option>';
+            adjAlmacen.innerHTML = '<option value="">Seleccione un almacén...</option>';
+
+            // Poblar ambos selects
+            almacenes.forEach(almacen => {
+                // Asumiendo que 'almacen' es un objeto { Nombre: "..." }
+                const option = `<option value="${almacen.Nombre}">${almacen.Nombre}</option>`;
+                filterAlmacen.innerHTML += option;
+                adjAlmacen.innerHTML += option;
+            });
+        }
+
+        function onInitialDataFailure(error) {
+            console.error("Error al cargar datos iniciales:", error);
+            filterAlmacen.innerHTML = '<option value="Todos">Error al cargar</option>';
+            adjAlmacen.innerHTML = '<option value="">Error al cargar</option>';
+            // No mostrar mensaje de error si estamos en modo demo (ya se mostró uno)
+            if (!window.google.script.run.getAlmacenes) { // Una forma de chequear si es el mock
+                showMessage('adj-form-message', 'Error cargando almacenes.', 'red');
+            }
+        }
+
+        /**
+         * Maneja el envío del formulario de BÚSQUEDA de Kardex
+         */
+        function handleKardexSearch(e) {
+            e.preventDefault();
+            const sku = skuSearchInput.value;
+
+            if (!sku || sku.trim() === "") {
+                // Corrección: Usar el ID correcto del mensaje de la tabla
+                kardexResultsMessageText.textContent = 'Por favor, ingrese un SKU para buscar.';
+                kardexResultsMessageText.className = 'text-red-500';
+                kardexResultsMessage.classList.remove('hidden');
+                kardexTableContainer.classList.add('hidden');
+                return;
+            }
+
+            setLoading(searchKardexBtn, searchKardexText, searchKardexSpinner, true);
+            kardexTableContainer.classList.add('hidden');
+            kardexResultsMessage.classList.remove('hidden');
+            kardexResultsMessageText.textContent = 'Buscando movimientos...';
+            kardexResultsMessageText.className = 'text-gray-500'; // Reset color
+
+            const searchParams = {
+                sku: sku,
+                fechaDesde: filterDateFrom.value,
+                fechaHasta: filterDateTo.value,
+                tipo: filterTipo.value,
+                almacen: filterAlmacen.value
+            };
+
+            google.script.run
+                .withSuccessHandler(onSearchSuccess)
+                .withFailureHandler(onSearchFailure)
+                .getKardexBySku(searchParams);
+        }
+
+        function onSearchSuccess(data) {
+            setLoading(searchKardexBtn, searchKardexText, searchKardexSpinner, false);
+            
+            if (data && data.length > 0) {
+                kardexTableContainer.classList.remove('hidden');
+                kardexResultsMessage.classList.add('hidden');
+                kardexTableBody.innerHTML = ''; // Limpiar tabla
+                
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'bg-white border-b hover:bg-gray-50';
+                    
+                    // Colorear tipo de movimiento
+                    const tipoClass = row.Tipo === 'Entrada' ? 'text-green-600 font-medium' : 'text-red-600 font-medium';
+
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">${row.Fecha || 'N/A'}</td>
+                        <td class="px-6 py-4 ${tipoClass}">${row.Tipo || 'N/A'}</td>
+                        <td class="px-6 py-4 font-medium text-gray-900">${row.Referencia || 'N/A'}</td>
+                        <td class="px-6 py-4 text-right">${row.Cantidad || 0}</td>
+                        <td class="px-6 py-4 text-right font-bold">${row.Saldo_Acumulado || 0}</td>
+                        <td class="px-6 py-4 text-right">$ ${formatCurrencyValue(row.Costo_unitario)}</td>
+                        <td class="px-6 py-4 text-right">$ ${formatCurrencyValue(row.Valor_Total)}</td>
+                        <td class="px-6 py-4">${row.Usuario || 'N/A'}</td>
+                        <td class="px-6 py-4">${row.Almacen || 'N/A'}</td>
+                    `;
+                    kardexTableBody.appendChild(tr);
+                });
+            } else {
+                kardexTableContainer.classList.add('hidden');
+                kardexResultsMessage.classList.remove('hidden');
+                kardexResultsMessageText.textContent = 'No se encontraron movimientos para este SKU con los filtros aplicados.';
+                kardexResultsMessageText.className = 'text-gray-500';
+            }
+        }
+
+        function onSearchFailure(error) {
+            setLoading(searchKardexBtn, searchKardexText, searchKardexSpinner, false);
+            kardexTableContainer.classList.add('hidden');
+            kardexResultsMessage.classList.remove('hidden');
+            kardexResultsMessageText.textContent = `Error al buscar: ${error.message || String(error)}`;
+            kardexResultsMessageText.className = 'text-red-500';
+        }
+
+
+        /**
+         * Maneja el envío del formulario de AJUSTE MANUAL
+         */
+        function handleAdjustmentSubmit(e) {
+            e.preventDefault();
+
+            const ajusteObject = {
+                sku: adjSku.value,
+                tipo: adjTipo.value,
+                cantidad: adjCantidad.value,
+                almacen: adjAlmacen.value,
+                justificacion: adjJustificacion.value
+            };
+
+            // Validación
+            if (!ajusteObject.sku || !ajusteObject.cantidad || !ajusteObject.almacen || !ajusteObject.justificacion) {
+                showMessage('adj-form-message', 'Todos los campos son obligatorios.', 'red');
+                return;
+            }
+            if (parseFloat(ajusteObject.cantidad) <= 0) {
+                showMessage('adj-form-message', 'La cantidad debe ser mayor a cero.', 'red');
+                return;
+            }
+
+            setLoading(adjSubmitButton, adjSubmitText, adjSubmitSpinner, true);
+            
+            google.script.run
+                .withSuccessHandler(onAjusteSuccess)
+                .withFailureHandler(onAjusteFailure)
+                .crearAjusteInventario(ajusteObject);
+        }
+
+        function onAjusteSuccess(response) {
+            setLoading(adjSubmitButton, adjSubmitText, adjSubmitSpinner, false);
+            
+            if (response && response.success) {
+                showMessage('adj-form-message', 'Ajuste registrado exitosamente.', 'green');
+                const skuAjustado = response.skuAjustado;
+                resetAdjustmentForm();
+
+                // Refrescar la búsqueda si el SKU ajustado es el que se está viendo
+                const skuBuscado = skuSearchInput.value;
+                if (skuBuscado && skuAjustado && skuBuscado.trim().toUpperCase() === skuAjustado.trim().toUpperCase()) {
+                    // Usar requestSubmit() para disparar el evento 'submit' del formulario de búsqueda
+                    kardexSearchForm.requestSubmit();
+                }
+
+            } else {
+                showMessage('adj-form-message', `Error: ${response.error || 'Error desconocido'}`, 'red');
+            }
+        }
+
+        function onAjusteFailure(error) {
+            setLoading(adjSubmitButton, adjSubmitText, adjSubmitSpinner, false);
+            showMessage('adj-form-message', `Error al guardar: ${error.message || String(error)}`, 'red');
+        }
+
+        /**
+         * Resetea el formulario de ajuste manual
+         */
+        function resetAdjustmentForm() {
+            adjustmentForm.reset();
+            adjFormMessage.textContent = '';
+            adjAlmacen.selectedIndex = 0; // Resetear select
+            adjTipo.selectedIndex = 0; // Resetear select
+        }
+
+
+        // --- FUNCIONES UTILITARIAS ---
+
+        /**
+         * Controla el estado de carga de un botón con spinner
+         * @param {HTMLElement} btn - El elemento botón
+         * @param {HTMLElement} text - El elemento span con el texto
+         * @param {HTMLElement} spinner - El elemento div del spinner
+         * @param {boolean} isLoadingState - El estado de carga
+         */
+        function setLoading(btn, text, spinner, isLoadingState) {
+            btn.disabled = isLoadingState;
+            if (isLoadingState) {
+                text.classList.add('hidden');
+                spinner.classList.remove('hidden');
+            } else {
+                text.classList.remove('hidden');
+                spinner.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Muestra un mensaje temporal en un elemento
+         * @param {string} elementId - ID del elemento <p> para el mensaje
+         * @param {string} message - El mensaje a mostrar
+         * @param {string} color - 'red' o 'green'
+         */
+        function showMessage(elementId, message, color) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            
+            el.textContent = message;
+            el.className = `text-sm h-5 ${color === 'red' ? 'text-red-500' : 'text-green-600'}`;
+            
+            // Limpiar mensaje de éxito después de 3 segundos
+            if (color === 'green') {
+                setTimeout(() => { 
+                    if (el.textContent === message) {
+                        el.textContent = ''; 
+                    }
+                }, 3000);
+            }
+        }
+
+        /**
+         * Formatea un número como moneda colombiana (sin decimales)
+         */
+        function formatCurrencyValue(value) {
+            const numberValue = parseFloat(value) || 0;
+            return new Intl.NumberFormat('es-CO', {
+                minimumFractionDigits: 0, 
+                maximumFractionDigits: 0, 
+                style: 'decimal'
+            }).format(numberValue);
+        }
+        
+        /**
+         * Navegación del Dashboard
+         */
+        function handleNavigation(pageId) {
+            console.log('Navegar a:', pageId);
+            window.top.location.href = SCRIPT_URL + "?page=" + pageId;
+        }
+
+    </script>
+
+</body>
+</html>
